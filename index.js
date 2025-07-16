@@ -1,0 +1,83 @@
+import {
+  dom,
+  Filter,
+  FSEventEmitter,
+  IdGenerator,
+  Pipeline,
+  Requester,
+  tool,
+} from "./src/fotastart";
+import { fireEvent, redirect, sendEvent } from "./src/helpers";
+import {
+  autoload,
+  broker,
+  component,
+  context,
+  ContextProvider,
+  contextProvider,
+  each,
+  eData,
+  fetchContext,
+  h,
+  include,
+  lazyFor,
+  loader,
+  MediatorManager,
+  mediatorManager,
+  mediators,
+  namespace,
+  OJS,
+  ojs,
+  OpenScript,
+  payload,
+  putContext,
+  req,
+  route,
+  Router,
+  state,
+  Utils,
+  v,
+} from "./src/open-script";
+
+tool.addToWindow(fireEvent, sendEvent, redirect, IdGenerator);
+
+tool.makeGlobal(
+  tool,
+  dom,
+  IdGenerator,
+  Requester,
+  Pipeline,
+  Filter,
+  FSEventEmitter
+);
+
+tool.addToWindow(
+  route,
+  OJS,
+  OpenScript,
+  Router,
+  broker,
+  h,
+  contextProvider,
+  ContextProvider,
+  mediatorManager,
+  MediatorManager,
+  ojs,
+  req,
+  include,
+  namespace,
+  state,
+  context,
+  mediators,
+  each,
+  lazyFor,
+  v,
+  payload,
+  eData,
+  loader,
+  putContext,
+  fetchContext,
+  autoload,
+  Utils,
+  component
+);

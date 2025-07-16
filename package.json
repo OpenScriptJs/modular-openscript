@@ -1,0 +1,24 @@
+{
+  "name": "modular-openscript",
+  "version": "1.0.0",
+  "description": "Lightweight JavaScript Frontend Framework for Build properly engineered frontend",
+  "keywords": [
+    "OpenScript.js",
+    "OpenScriptJs"
+  ],
+  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
+  "bugs": {
+    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenScriptJs/modular-openscript.git"
+  },
+  "license": "ISC",
+  "author": "Levi Kamara Zwannah <levizwannah@gmail.com>",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
