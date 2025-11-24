@@ -1,24 +1,81 @@
 {
-  "name": "modular-openscript",
+  "name": "openscriptjs",
   "version": "1.0.0",
-  "description": "Lightweight JavaScript Frontend Framework for Build properly engineered frontend",
-  "keywords": [
-    "OpenScript.js",
-    "OpenScriptJs"
-  ],
-  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
-  "bugs": {
-    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
+  "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
+  "type": "module",
+  "main": "./dist/openscript.umd.js",
+  "module": "./dist/openscript.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/openscript.es.js",
+      "require": "./dist/openscript.umd.js"
+    },
+    "./styles": "./dist/styles/tailwind.css",
+    "./plugin": "./build/vite-plugin-openscript.js"
   },
+  "bin": {
+    "create-ojs-app": "./bin/create-ojs-app.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "templates",
+    "build/vite-plugin-openscript.js",
+    "styles",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "openscript",
+    "openscriptjs",
+    "framework",
+    "reactive",
+    "components",
+    "spa",
+    "web-framework",
+    "javascript",
+    "frontend",
+    "ui"
+  ],
+  "author": "Levi Kamara Zwannah",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenScriptJs/modular-openscript.git"
+    "url": "https://github.com/yourusername/openscriptjs.git"
   },
-  "license": "ISC",
-  "author": "Levi Kamara Zwannah <levizwannah@gmail.com>",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bugs": {
+    "url": "https://github.com/yourusername/openscriptjs/issues"
+  },
+  "homepage": "https://github.com/yourusername/openscriptjs#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.5",
+    "@babel/generator": "^7.23.5",
+    "@babel/parser": "^7.23.5",
+    "@babel/traverse": "^7.23.5",
+    "@testing-library/dom": "^10.4.1",
+    "@vitest/ui": "^4.0.13",
+    "autoprefixer": "^10.4.16",
+    "happy-dom": "^20.0.10",
+    "jsdom": "^27.2.0",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "vite": "^5.0.7",
+    "vitest": "^4.0.13"
+  },
+  "peerDependencies": {
+    "vite": "^4.0.0 || ^5.0.0"
   }
 }
