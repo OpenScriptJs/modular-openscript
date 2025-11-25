@@ -1,6 +1,6 @@
 {
   "name": "openscriptjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
   "type": "module",
   "main": "./dist/openscript.umd.js",
@@ -14,7 +14,7 @@
     "./plugin": "./build/vite-plugin-openscript.js"
   },
   "bin": {
-    "create-ojs-app": "./bin/create-ojs-app.js"
+    "create-ojs-app": "bin/create-ojs-app"
   },
   "files": [
     "dist",
@@ -51,7 +51,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OpenScriptJs/modular-openscript.git"
+    "url": "git+https://github.com/OpenScriptJs/modular-openscript.git"
   },
   "bugs": {
     "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
