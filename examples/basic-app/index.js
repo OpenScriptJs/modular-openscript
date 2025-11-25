@@ -16,7 +16,10 @@ import { loadTodosFromLocalStorage } from "./helpers.js";
 import "./routes.js";
 
 // Import OpenScript utilities
-import { broker, router } from "../../index.js";
+import { app } from "../../index.js";
+
+const broker = app("broker");
+const router = app("router");
 
 // ============================================
 // APPLICATION INITIALIZATION
@@ -27,10 +30,10 @@ console.log("🚀 Initializing Todo App...");
 // Load saved todos from localStorage
 const savedTodos = loadTodosFromLocalStorage();
 if (savedTodos.length > 0) {
-    tc.todos.value = savedTodos;
-    // Update nextId based on loaded todos
-    const maxId = Math.max(...savedTodos.map(t => t.id || 0));
-    tc.nextId = maxId + 1;
+  tc.todos.value = savedTodos;
+  // Update nextId based on loaded todos
+  const maxId = Math.max(...savedTodos.map((t) => t.id || 0));
+  tc.nextId = maxId + 1;
 }
 
 // Emit app started event

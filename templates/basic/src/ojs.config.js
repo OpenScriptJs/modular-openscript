@@ -1,4 +1,4 @@
-import { app } from "openscriptjs";
+import { app } from "modular-openscriptjs";
 import { appEvents } from "./events.js";
 
 /*----------------------------------
@@ -6,8 +6,8 @@ import { appEvents } from "./events.js";
  |----------------------------------
 */
 
-const router = app('router');
-const broker = app('broker');
+const router = app("router");
+const broker = app("broker");
 
 export function configureApp() {
   /*-----------------------------------
@@ -82,4 +82,4 @@ export function configureApp() {
    * ---------------------------------------------
    */
   container.value("appEvents", appEvents);
-} 
+}

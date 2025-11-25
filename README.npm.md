@@ -1,6 +1,6 @@
 # OpenScriptJs
 
-[![npm version](https://badge.fury.io/js/openscriptjs.svg)](https://www.npmjs.com/package/openscriptjs)
+[![npm version](https://badge.fury.io/js/modular-openscriptjs.svg)](https://www.npmjs.com/package/modular-openscriptjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightweight, reactive JavaScript framework for building modern web applications with components, state management, routing, and event-driven architecture.
@@ -20,52 +20,45 @@ A lightweight, reactive JavaScript framework for building modern web application
 
 ### Installation
 
-```bash
-npm install openscriptjs
-```
-
-### Create a New Project
-
-```bash
-npm create openscript my-app
-cd my-app
-npm run dev
-```
-
-Choose from templates:
+````bash
 - `basic` - Clean starter with vanilla CSS
 - `tailwind` - Pre-configured with TailwindCSS
 
 ## 📖 Basic Usage
 
 ```javascript
-import { Component, h, state } from 'openscriptjs';
+import { Component, app, state } from "modular-openscriptjs";
+
+const h = app("h");
 
 class Counter extends Component {
-    constructor() {
-        super();
-        this.count = state(0);
-    }
+  constructor() {
+    super();
+    this.count = state(0);
+  }
 
-    increment() {
-        this.count.value++;
-    }
+  increment() {
+    this.count.value++;
+  }
 
-    render() {
-        return h.div(
-            h.h2("Count: ", this.count.value),
-            h.button({
-                listeners: { click: this.increment.bind(this) }
-            }, "Increment")
-        );
-    }
+  render() {
+    return h.div(
+      h.h2("Count: ", this.count.value),
+      h.button(
+        {
+          listeners: { click: this.increment.bind(this) },
+        },
+        "Increment"
+      )
+    );
+  }
 }
 
 // Mount and render
 const counter = new Counter();
 await counter.mount();
 h.Counter({ parent: document.body });
-```
+````
 
 ## 🏗️ Project Structure
 
@@ -85,23 +78,21 @@ my-app/
 ### Components
 
 ```javascript
-import { Component, h } from 'openscriptjs';
+import { Component, app } from "modular-openscriptjs";
+
+const h = app("h");
 
 class MyComponent extends Component {
-    render(...args) {
-        return h.div(
-            { class: "container" },
-            h.h1("Hello OpenScript!"),
-            ...args
-        );
-    }
+  render(...args) {
+    return h.div({ class: "container" }, h.h1("Hello OpenScript!"), ...args);
+  }
 }
 ```
 
 ### State Management
 
 ```javascript
-import { state } from 'openscriptjs';
+import { state } from "modular-openscriptjs";
 
 // Create reactive state
 const count = state(0);
@@ -110,20 +101,23 @@ const count = state(0);
 count.value = 10;
 
 // Listen to changes
-count.listener((s) => console.log('New value:', s.value));
+count.listener((s) => console.log("New value:", s.value));
 ```
 
 ### Routing
 
 ```javascript
-import { router, h } from 'openscriptjs';
+import { app } from "modular-openscriptjs";
 
-router.on('/home', () => {
-    h.HomePage({ parent: document.body, resetParent: true });
+const router = app("router");
+const h = app("h");
+
+router.on("/home", () => {
+  h.HomePage({ parent: document.body, resetParent: true });
 });
 
-router.on('/about', () => {
-    h.AboutPage({ parent: document.body, resetParent: true });
+router.on("/about", () => {
+  h.AboutPage({ parent: document.body, resetParent: true });
 });
 
 router.listen();
@@ -132,7 +126,9 @@ router.listen();
 ### Context & Global State
 
 ```javascript
-import { context, putContext } from 'openscriptjs';
+import { context, putContext, app } from "modular-openscriptjs";
+
+const h = app("h");
 
 // Register contexts
 putContext(["global", "user"], "AppContext");
@@ -141,8 +137,8 @@ const gc = context("global");
 
 // Initialize states
 gc.states({
-    appName: "My App",
-    theme: "light"
+  appName: "My App",
+  theme: "light",
 });
 
 // Pass to components
@@ -154,10 +150,14 @@ h.MyComponent(gc.appName, { parent: document.body });
 OpenScript works seamlessly with Tailwind:
 
 ```javascript
+import { app } from "modular-openscriptjs";
+
+const h = app("h");
+
 h.div(
-    { class: "bg-blue-500 text-white p-4 rounded-lg" },
-    h.h1({ class: "text-2xl font-bold" }, "Styled with Tailwind")
-)
+  { class: "bg-blue-500 text-white p-4 rounded-lg" },
+  h.h1({ class: "text-2xl font-bold" }, "Styled with Tailwind")
+);
 ```
 
 See [Tailwind Integration Guide](./docs/TAILWIND_INTEGRATION.md) for details.
@@ -165,7 +165,7 @@ See [Tailwind Integration Guide](./docs/TAILWIND_INTEGRATION.md) for details.
 ## 🔧 Building Your App
 
 ```bash
-# Development  
+# Development
 npm run dev
 
 # Production build
@@ -181,13 +181,11 @@ For proper minification handling:
 
 ```javascript
 // vite.config.js
-import { openScriptComponentPlugin } from 'openscriptjs/plugin';
+import { openScriptComponentPlugin } from "modular-openscriptjs/plugin";
 
 export default {
-    plugins: [
-        openScriptComponentPlugin()
-    ]
-}
+  plugins: [openScriptComponentPlugin()],
+};
 ```
 
 This ensures component names survive minification.
@@ -209,9 +207,9 @@ MIT © Levi Kamara Zwannah
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/yourusername/openscriptjs)
-- [Issue Tracker](https://github.com/yourusername/openscriptjs/issues)
-- [npm Package](https://www.npmjs.com/package/openscriptjs)
+- [GitHub Repository](https://github.com/yourusername/modular-openscriptjs)
+- [Issue Tracker](https://github.com/yourusername/modular-openscriptjs/issues)
+- [npm Package](https://www.npmjs.com/package/modular-openscriptjs)
 
 ---
 

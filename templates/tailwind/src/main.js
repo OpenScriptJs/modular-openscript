@@ -11,7 +11,7 @@
 // registered before any component is
 // initialized
 import { configureApp } from "./ojs.config.js";
-import { app } from "openscriptjs";
+import { app } from "modular-openscriptjs";
 import { setupContexts } from "./contexts.js";
 import { setupRoutes } from "./routes.js";
 import "./style.css"; // Import Tailwind styles

@@ -1,4 +1,4 @@
-import { app, State, Component, ojs } from "openscriptjs";
+import { app, State, Component, ojs } from "modular-openscriptjs";
 
 // Define a State
 const counter = State.state(0);

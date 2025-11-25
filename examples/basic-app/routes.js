@@ -3,19 +3,22 @@
  * Defines application routing using OpenScript router
  */
 
-import { router, h, dom } from "../../index.js";
+import { app, dom } from "../../index.js";
 import { gc } from "./contexts.js";
 import TodoApp from "./pages/TodoApp.js";
+
+const router = app("router");
+const h = app("h");
 
 /**
  * Helper to render a component to the root element
  * @param {Component} component - Component to render
  */
 const app = (component) => {
-    return component({
-        parent: gc.rootElement,
-        resetParent: true
-    });
+  return component({
+    parent: gc.rootElement,
+    resetParent: true,
+  });
 };
 
 // ============================================
@@ -29,27 +32,43 @@ router.basePath("");
 router.default(() => router.to("home"));
 
 // Home route - shows all todos
-router.on("/", () => {
+router.on(
+  "/",
+  () => {
     console.log("Route: Home");
     app(h.TodoApp());
-}, "home");
+  },
+  "home"
+);
 
 // Filter routes
 router.prefix("filter").group(() => {
-    router.on("/all", () => {
-        console.log("Route: Filter - All");
-        app(h.TodoApp());
-    }, "filter.all");
+  router.on(
+    "/all",
+    () => {
+      console.log("Route: Filter - All");
+      app(h.TodoApp());
+    },
+    "filter.all"
+  );
 
-    router.on("/active", () => {
-        console.log("Route: Filter - Active");
-        app(h.TodoApp());
-    }, "filter.active");
+  router.on(
+    "/active",
+    () => {
+      console.log("Route: Filter - Active");
+      app(h.TodoApp());
+    },
+    "filter.active"
+  );
 
-    router.on("/completed", () => {
-        console.log("Route: Filter - Completed");
-        app(h.TodoApp());
-    }, "filter.completed");
+  router.on(
+    "/completed",
+    () => {
+      console.log("Route: Filter - Completed");
+      app(h.TodoApp());
+    },
+    "filter.completed"
+  );
 });
 
 console.log("✓ Routes registered");

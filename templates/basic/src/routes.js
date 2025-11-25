@@ -1,10 +1,13 @@
 /**
- * Routes for Todo App
+ * Route Definitions
  * Defines application routing using OpenScript router
  */
 
-import { router, h, dom } from "openscriptjs";
+import { app, dom } from "modular-openscriptjs";
 import { gc } from "./contexts.js";
+
+const router = app("router");
+const h = app("h");
 
 export function setupRoutes() {
   // Default route - redirect to home
@@ -14,7 +17,7 @@ export function setupRoutes() {
    * Helper to render a component to the root element
    * @param {Component} component - Component to render
    */
-  const app = (component) => {
+  const appRender = (component) => {
     return h.App(component, {
       parent: gc.rootElement,
       resetParent: true, // Clear parent before rendering
@@ -25,7 +28,7 @@ export function setupRoutes() {
     "/",
     () => {
       console.log("Route: Home");
-      app(h.div("Hello OpenScript"));
+      appRender(h.div("Hello OpenScript"));
     },
     "home"
   );

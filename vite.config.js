@@ -17,7 +17,7 @@ export default defineConfig({
       name: "OpenScript",
       // Output formats
       formats: ["es", "umd"],
-      fileName: (format) => `openscript.${format}.js`,
+      fileName: (format) => `modular-openscriptjs.${format}.js`,
     },
 
     rollupOptions: {

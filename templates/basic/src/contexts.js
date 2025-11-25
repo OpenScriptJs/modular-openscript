@@ -3,7 +3,7 @@
  * Using IoC Container for dependency injection
  */
 
-import { Context, context, dom, putContext, app } from "openscriptjs";
+import { Context, context, dom, putContext, app } from "modular-openscriptjs";
 
 putContext(["global"], "AppContext");
 

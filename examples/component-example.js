@@ -1,4 +1,6 @@
-import { Component, h, app } from "../index.js";
+import { Component, app } from "../index.js";
+
+const h = app("h");
 
 class SenderComponent extends Component {
   render(...args) {

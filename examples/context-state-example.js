@@ -3,7 +3,16 @@
  * Demonstrates best practice: defining states in contexts and passing to components
  */
 
-import { Component, h, context, putContext, state, dom } from "openscriptjs";
+import {
+  Component,
+  app,
+  context,
+  putContext,
+  state,
+  dom,
+} from "modular-openscriptjs";
+
+const h = app("h");
 
 // ============================================
 // 1. INITIALIZE CONTEXTS AND STATES
@@ -18,20 +27,20 @@ const uc = context("user");
 
 // Initialize states using .states() helper
 pc.states({
-    pageTitle: "Dashboard",
-    loading: false,
-    currentView: "home"
+  pageTitle: "Dashboard",
+  loading: false,
+  currentView: "home",
 });
 
 uc.states({
-    username: "Guest",
-    isAuthenticated: false,
-    preferences: { theme: "light" }
+  username: "Guest",
+  isAuthenticated: false,
+  preferences: { theme: "light" },
 });
 
 gc.states({
-    appName: "MyApp",
-    version: "1.0.0"
+  appName: "MyApp",
+  version: "1.0.0",
 });
 
 // You can also add non-reactive properties
@@ -42,61 +51,57 @@ gc.apiUrl = "https://api.example.com";
 // ============================================
 
 class PageHeader extends Component {
-    // Receive pageTitle state as parameter
-    render(pageTitle, appName, ...args) {
-        return h.header(
-            { class: "page-header" },
-            h.h1(pageTitle.value),  // Access state via .value
-            h.p({ class: "app-name" }, appName.value),
-            ...args
-        );
-    }
+  // Receive pageTitle state as parameter
+  render(pageTitle, appName, ...args) {
+    return h.header(
+      { class: "page-header" },
+      h.h1(pageTitle.value), // Access state via .value
+      h.p({ class: "app-name" }, appName.value),
+      ...args
+    );
+  }
 }
 
 class UserGreeting extends Component {
-    // Receive user state
-    render(username, ...args) {
-        return h.div(
-            { class: "greeting" },
-            h.p(`Welcome, ${username.value}!`),
-            ...args
-        );
-    }
+  // Receive user state
+  render(username, ...args) {
+    return h.div(
+      { class: "greeting" },
+      h.p(`Welcome, ${username.value}!`),
+      ...args
+    );
+  }
 }
 
 class ThemeToggle extends Component {
-    toggleTheme() {
-        const current = uc.preferences.value.theme;
-        uc.preferences.value = {
-            ...uc.preferences.value,
-            theme: current === "light" ? "dark" : "light"
-        };
-    }
+  toggleTheme() {
+    const current = uc.preferences.value.theme;
+    uc.preferences.value = {
+      ...uc.preferences.value,
+      theme: current === "light" ? "dark" : "light",
+    };
+  }
 
-    // Receive preferences state
-    render(preferences, ...args) {
-        return h.button(
-            {
-                class: "btn btn-secondary",
-                listeners: { click: this.toggleTheme }
-            },
-            `Theme: ${preferences.value.theme}`,
-            ...args
-        );
-    }
+  // Receive preferences state
+  render(preferences, ...args) {
+    return h.button(
+      {
+        class: "btn btn-secondary",
+        listeners: { click: this.toggleTheme },
+      },
+      `Theme: ${preferences.value.theme}`,
+      ...args
+    );
+  }
 }
 
 class LoadingIndicator extends Component {
-    // Receive loading state
-    render(loading, ...args) {
-        if (!loading.value) return null;
-        
-        return h.div(
-            { class: "loading" },
-            h.span("Loading..."),
-            ...args
-        );
-    }
+  // Receive loading state
+  render(loading, ...args) {
+    if (!loading.value) return null;
+
+    return h.div({ class: "loading" }, h.span("Loading..."), ...args);
+  }
 }
 
 // ============================================
@@ -104,28 +109,25 @@ class LoadingIndicator extends Component {
 // ============================================
 
 class Dashboard extends Component {
-    render(...args) {
-        return h.div(
-            { class: "dashboard" },
-            // Pass global states to header
-            h.PageHeader(pc.pageTitle, gc.appName),
-            
-            // Pass user state to greeting
-            h.UserGreeting(uc.username),
-            
-            // Pass preferences to theme toggle
-            h.ThemeToggle(uc.preferences),
-            
-            // Pass loading state
-            h.LoadingIndicator(pc.loading),
-            
-            h.div(
-                { class: "content" },
-                h.p("Dashboard content goes here")
-            ),
-            ...args
-        );
-    }
+  render(...args) {
+    return h.div(
+      { class: "dashboard" },
+      // Pass global states to header
+      h.PageHeader(pc.pageTitle, gc.appName),
+
+      // Pass user state to greeting
+      h.UserGreeting(uc.username),
+
+      // Pass preferences to theme toggle
+      h.ThemeToggle(uc.preferences),
+
+      // Pass loading state
+      h.LoadingIndicator(pc.loading),
+
+      h.div({ class: "content" }, h.p("Dashboard content goes here")),
+      ...args
+    );
+  }
 }
 
 // ============================================
@@ -134,19 +136,19 @@ class Dashboard extends Component {
 
 // Function to update page
 function navigateToPage(pageName) {
-    pc.loading.value = true;
-    pc.pageTitle.value = pageName;
-    
-    // Simulate async navigation
-    setTimeout(() => {
-        pc.loading.value = false;
-    }, 500);
+  pc.loading.value = true;
+  pc.pageTitle.value = pageName;
+
+  // Simulate async navigation
+  setTimeout(() => {
+    pc.loading.value = false;
+  }, 500);
 }
 
 // Function to login
 function login(username) {
-    uc.username.value = username;
-    uc.isAuthenticated.value = true;
+  uc.username.value = username;
+  uc.isAuthenticated.value = true;
 }
 
 // ============================================
@@ -154,42 +156,42 @@ function login(username) {
 // ============================================
 
 function initializeApp() {
-    // Add state listeners for logging
-    pc.pageTitle.listener((state) => {
-        console.log(`Page changed to: ${state.value}`);
-    });
+  // Add state listeners for logging
+  pc.pageTitle.listener((state) => {
+    console.log(`Page changed to: ${state.value}`);
+  });
 
-    uc.preferences.listener((state) => {
-        console.log(`Theme changed to: ${state.value.theme}`);
-        // Could apply theme to document here
-        document.body.className = `theme-${state.value.theme}`;
-    });
+  uc.preferences.listener((state) => {
+    console.log(`Theme changed to: ${state.value.theme}`);
+    // Could apply theme to document here
+    document.body.className = `theme-${state.value.theme}`;
+  });
 
-    // Render dashboard with special attributes
-    const dashboard = h.Dashboard({
-        parent: document.getElementById("app"),
-        resetParent: true  // Clear existing content
-    });
+  // Render dashboard with special attributes
+  const dashboard = h.Dashboard({
+    parent: document.getElementById("app"),
+    resetParent: true, // Clear existing content
+  });
 
-    // Simulate user login after 1 second
-    setTimeout(() => {
-        login("John Doe");
-    }, 1000);
+  // Simulate user login after 1 second
+  setTimeout(() => {
+    login("John Doe");
+  }, 1000);
 
-    // Simulate page navigation after 2 seconds
-    setTimeout(() => {
-        navigateToPage("Profile");
-    }, 2000);
+  // Simulate page navigation after 2 seconds
+  setTimeout(() => {
+    navigateToPage("Profile");
+  }, 2000);
 }
 
 // Export for use
-export { 
-    Dashboard, 
-    PageHeader, 
-    UserGreeting, 
-    ThemeToggle,
-    LoadingIndicator,
-    initializeApp,
-    navigateToPage,
-    login
+export {
+  Dashboard,
+  PageHeader,
+  UserGreeting,
+  ThemeToggle,
+  LoadingIndicator,
+  initializeApp,
+  navigateToPage,
+  login,
 };

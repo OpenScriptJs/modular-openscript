@@ -1,4 +1,6 @@
-import { Component, h, state, putContext, context, app } from "../index.js";
+import { Component, app, state, putContext, context } from "../index.js";
+
+const h = app("h");
 
 // 1. Fragments Example
 class FragmentComponent extends Component {

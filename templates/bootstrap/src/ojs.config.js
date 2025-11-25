@@ -1,4 +1,4 @@
-import { app } from "openscriptjs";
+import { app } from "modular-openscriptjs";
 import { appEvents } from "./events.js";
 
 /*----------------------------------

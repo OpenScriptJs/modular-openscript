@@ -42,6 +42,7 @@ container.value("contextProvider", contextProvider);
 container.value("mediatorManager", mediatorManager);
 container.value("loader", loader);
 container.value("autoload", autoload);
+container.value("h", h);
 
 // Global Helpers
 const state = State.state;
@@ -73,14 +74,14 @@ const dom = DOM;
 
 /**
  * Resolves an instance from the container or returns the container if no instance is provided
- * @param {string} instance 
- * @returns {Container|Object} 
+ * @param {string} instance
+ * @returns {Container|Object}
  */
 const app = (instance = null) => {
-    if(instance === null) return container;
+  if (instance === null) return container;
 
-    return container.resolve(instance);
-}
+  return container.resolve(instance);
+};
 
 // Export everything
 export {
@@ -102,7 +103,6 @@ export {
   DOMReconciler,
   MarkupEngine,
   MarkupHandler,
-  h,
   Utils,
   DOM,
   app,
@@ -148,7 +148,6 @@ export default {
   DOMReconciler,
   MarkupEngine,
   MarkupHandler,
-  h,
   Utils,
   DOM,
   app,

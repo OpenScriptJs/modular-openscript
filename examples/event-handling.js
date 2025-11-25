@@ -1,4 +1,6 @@
-import { Mediator, Component, h, app, payload, Utils } from "../index.js";
+import { Mediator, Component, app, payload, Utils } from "../index.js";
+
+const h = app("h");
 
 // 1. Declarative Event Listening (Mediator)
 // Mediators are perfect for handling business logic and responding to events.
