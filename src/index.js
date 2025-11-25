@@ -44,6 +44,15 @@ container.value("loader", loader);
 container.value("autoload", autoload);
 container.value("h", h);
 
+let ojsRouterEvents = {
+  ojs: {
+    beforeRouteChange: true,
+    routeChanged: true,
+  },
+};
+
+broker.registerEvents(ojsRouterEvents);
+
 // Global Helpers
 const state = State.state;
 const ojs = (...classDeclarations) => new Runner().run(...classDeclarations);
