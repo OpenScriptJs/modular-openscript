@@ -135,6 +135,7 @@ export {
   mediators,
   eData,
   payload,
+  ojsRouterEvents,
 };
 
 // Default export object
@@ -180,4 +181,5 @@ export default {
   mediators,
   eData,
   payload,
+  ojsRouterEvents,
 };
