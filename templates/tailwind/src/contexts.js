@@ -15,7 +15,7 @@ export const gc = context("global");
 
 export function setupContexts() {
   gc.states({
-    appName: "Setup App",
+    appName: "Tailwind App",
     version: "1.0.0",
     isInitialized: false,
   });
@@ -24,6 +24,6 @@ export function setupContexts() {
   gc.rootElement = dom.id("app-root");
 
   // Register context in IoC container
-  app.value("gc", gc);
-  app.value("globalContext", gc);
+  app().value("gc", gc);
+  app().value("globalContext", gc);
 }

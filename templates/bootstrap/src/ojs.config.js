@@ -2,12 +2,12 @@ import { app } from "openscriptjs";
 import { appEvents } from "./events.js";
 
 /*----------------------------------
- | Do OpenScript Configurations Here
+ | Configure the OpenScript App
  |----------------------------------
 */
 
-const router = app('router');
-const broker = app('broker');
+const router = app("router");
+const broker = app("broker");
 
 export function configureApp() {
   /*-----------------------------------
@@ -81,5 +81,5 @@ export function configureApp() {
    * Register core services in IoC container
    * ---------------------------------------------
    */
-  container.value("appEvents", appEvents);
-} 
+  app().value("appEvents", appEvents);
+}

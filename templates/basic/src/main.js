@@ -7,7 +7,7 @@
 // registered before any component is
 // initialized  
 import { configureApp } from './ojs.config';
-import { router } from 'openscriptjs';
+import { app } from 'openscriptjs';
 import { setupContexts } from './contexts';
 import { setupRoutes } from './routes';
 
@@ -16,6 +16,6 @@ setupContexts();
 setupRoutes();
 
 // start the app
-router.listen();
+app('router').listen();
 
 console.log('✓ OpenScript app initialized');

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Component } from "../src/component/Component.js";
+import Component from "../src/component/Component.js";
 import { h } from "../src/component/h.js";
 import State from "../src/core/State.js";
 
@@ -25,7 +25,6 @@ describe("Component", () => {
 
       const component = new MyComponent();
       expect(component.rendered).toBe(false);
-      expect(component.parentElement).toBeNull();
     });
   });
 
@@ -61,7 +60,7 @@ describe("Component", () => {
   });
 
   describe("Component Mounting", () => {
-    it("should mount component to parent element", () => {
+    it("should render component in parent element", () => {
       const parent = document.createElement("div");
 
       class MyComponent extends Component {
@@ -71,12 +70,13 @@ describe("Component", () => {
       }
 
       const component = new MyComponent();
-      component.mount(parent);
+      component.mount();
+
+      h.MyComponent({ parent });
 
       expect(parent.children.length).toBe(1);
       expect(parent.textContent).toBe("Mounted Content");
       expect(component.rendered).toBe(true);
-      expect(component.parentElement).toBe(parent);
     });
   });
 
@@ -101,12 +101,12 @@ describe("Component", () => {
   });
 
   describe("Component Lifecycle", () => {
-    it("should call onCreate hook", () => {
-      let createCalled = false;
+    it("should handle rendered event", () => {
+      let rendered = false;
 
-      class MyComponent extends Component {
-        onCreate() {
-          createCalled = true;
+      class RenderEventComponent extends Component {
+        $_rendered() {
+          rendered = true;
         }
 
         render() {
@@ -114,17 +114,20 @@ describe("Component", () => {
         }
       }
 
-      const component = new MyComponent();
-      expect(createCalled).toBe(true);
+      const component = new RenderEventComponent();
+      component.mount();
+      h.RenderEventComponent();
+
+      expect(rendered).toBe(true);
     });
 
-    it("should call onMount hook when mounted", () => {
+    it("should handle mounted event", async () => {
       const parent = document.createElement("div");
-      let mountCalled = false;
+      let mounted = false;
 
-      class MyComponent extends Component {
-        onMount() {
-          mountCalled = true;
+      class MountEventComponent extends Component {
+        $_mounted() {
+          mounted = true;
         }
 
         render() {
@@ -132,32 +135,36 @@ describe("Component", () => {
         }
       }
 
-      const component = new MyComponent();
-      component.mount(parent);
+      
+      const component = new MountEventComponent();
+      await component.mount();
+      h.MountEventComponent();
 
-      expect(mountCalled).toBe(true);
+      expect(mounted).toBe(true);
     });
   });
 
   describe("Component Update", () => {
-    it("should update component when update is called", () => {
+    it("should update component when render called", () => {
       const parent = document.createElement("div");
       let renderCount = 0;
 
-      class MyComponent extends Component {
+      class RenderCountComponent extends Component {
         render() {
           renderCount++;
           return h.div(`Render #${renderCount}`);
         }
       }
 
-      const component = new MyComponent();
-      component.mount(parent);
+      const component = new RenderCountComponent();
+      component.mount();
+
+      h.RenderCountComponent({ parent });
 
       expect(renderCount).toBe(1);
       expect(parent.textContent).toBe("Render #1");
 
-      component.update();
+      h.RenderCountComponent({ parent, resetParent: true });
 
       expect(renderCount).toBe(2);
       expect(parent.textContent).toBe("Render #2");

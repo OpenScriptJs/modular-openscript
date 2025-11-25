@@ -1,8 +1,23 @@
-import { describe, it, expect } from "vitest";
-import { Context, putContext, context } from "../src/core/Context.js";
-import { State } from "../src/core/State.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import Context from "../src/core/Context.js";
+import { putContext, context, container } from "../src/index.js";
+import State from "../src/core/State.js";
 
 describe("Context", () => {
+  beforeEach(() => {
+    // Clear context map to ensure fresh state for each test
+    const contextProvider = container.resolve("contextProvider");
+    if (contextProvider && contextProvider.map) {
+      contextProvider.map.clear();
+    }
+    // Suppress console.warn for putContext warnings
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe("Context Creation", () => {
     it("should create context with putContext", () => {
       putContext("test", "TestContext");

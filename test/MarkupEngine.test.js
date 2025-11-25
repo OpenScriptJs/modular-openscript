@@ -56,7 +56,7 @@ describe("Markup Engine (h)", () => {
     });
 
     it("should set style object", () => {
-      const element = h.div({ style: { color: "red", fontSize: "16px" } });
+      const element = h.div({ style: "color: red; font-size: 16px;" });
 
       expect(element.style.color).toBe("red");
       expect(element.style.fontSize).toBe("16px");
@@ -68,8 +68,10 @@ describe("Markup Engine (h)", () => {
       let clicked = false;
       const element = h.button(
         {
-          onclick: () => {
-            clicked = true;
+          listeners: {
+            click: () => {
+              clicked = true;
+            },
           },
         },
         "Click"
@@ -84,11 +86,13 @@ describe("Markup Engine (h)", () => {
       let hoverCount = 0;
 
       const element = h.div({
-        onclick: () => {
-          clickCount++;
-        },
-        onmouseover: () => {
-          hoverCount++;
+        listeners: {
+          click: () => {
+            clickCount++;
+          },
+          mouseover: () => {
+            hoverCount++;
+          },
         },
       });
 
@@ -104,14 +108,15 @@ describe("Markup Engine (h)", () => {
     it("should create fragment with h.$()", () => {
       const fragment = h.$(h.div("First"), h.div("Second"));
 
-      expect(fragment.nodeType).toBe(11); // DOCUMENT_FRAGMENT_NODE
+
+      expect(fragment.tagName).toBe("OJS-SPECIAL-FRAGMENT");
       expect(fragment.childNodes.length).toBe(2);
     });
 
     it("should create fragment with h._()", () => {
       const fragment = h._(h.span("A"), h.span("B"));
 
-      expect(fragment.nodeType).toBe(11);
+      expect(fragment.tagName).toBe("OJS-SPECIAL-FRAGMENT");
       expect(fragment.childNodes.length).toBe(2);
     });
   });

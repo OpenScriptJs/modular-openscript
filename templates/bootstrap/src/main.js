@@ -2,17 +2,21 @@
  * Main entry point for your OpenScript application
  */
 
-import { Component, h, router, broker, ojs } from 'openscriptjs';
-import App from './components/App.js';
+// this must come first to ensure that
+// all events the system needs have been
+// registered before any component is
+// initialized
+import { configureApp } from "./ojs.config.js";
+import { app } from "openscriptjs";
+import { setupContexts } from "./contexts.js";
+import { setupRoutes } from "./routes.js";
+import "./style.scss"; // Import Bootstrap styles
 
+configureApp();
+setupContexts();
+setupRoutes();
 
-// Render the app
-h.App({
-    parent: document.getElementById('app'),
-    resetParent: true
-}); 
+// start the app
+app("router").listen();
 
-// Start the router
-router.listen();
-
-console.log('✓ OpenScript app initialized');
+console.log("✓ OpenScript app initialized");
