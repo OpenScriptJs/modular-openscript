@@ -3,7 +3,7 @@
  * Demonstrates best practice: defining states in contexts and passing to components
  */
 
-import { Component, h, context, putContext, state, dom } from "../index.js";
+import { Component, h, context, putContext, state, dom } from "openscriptjs";
 
 // ============================================
 // 1. INITIALIZE CONTEXTS AND STATES

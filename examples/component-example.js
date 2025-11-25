@@ -1,26 +1,26 @@
-import { Component, h, broker } from "../index.js";
+import { Component, h, app } from "../index.js";
 
 class SenderComponent extends Component {
-    render(...args) {
-        return h.button(
-            {
-                onclick: () => {
-                    broker.emit("message", "Hello from Sender!");
-                },
-            },
-            "Send Message",
-            ...args
-        );
-    }
+  render(...args) {
+    return h.button(
+      {
+        onclick: () => {
+          app("broker").emit("message", "Hello from Sender!");
+        },
+      },
+      "Send Message",
+      ...args
+    );
+  }
 }
 
 class ReceiverComponent extends Component {
-    constructor() {
-        super();
-        this.message = "Waiting...";
-    }
+  constructor() {
+    super();
+    this.message = "Waiting...";
+  }
 
-    render(...args) {
-        return h.div(`Received: ${this.message}`, ...args);
-    }
+  render(...args) {
+    return h.div(`Received: ${this.message}`, ...args);
+  }
 }

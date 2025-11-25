@@ -51,12 +51,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/openscriptjs.git"
+    "url": "https://github.com/OpenScriptJs/modular-openscript.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/openscriptjs/issues"
+    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
   },
-  "homepage": "https://github.com/yourusername/openscriptjs#readme",
+  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
   "engines": {
     "node": ">=16.0.0"
   },
