@@ -1,6 +1,6 @@
 {
-  "name": "openscriptjs",
-  "version": "1.0.1",
+  "name": "modular-openscriptjs",
+  "version": "1.0.0",
   "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
   "type": "module",
   "main": "./dist/openscript.umd.js",
