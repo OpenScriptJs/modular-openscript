@@ -3,7 +3,8 @@ import DOMReconciler from "./DOMReconciler.js";
 import BrokerRegistrar from "../broker/BrokerRegistrar.js";
 import State from "../core/State.js";
 import { container } from "../core/Container.js";
-import { h } from "./h.js";
+
+const h = container.resolve("h");
 
 /**
  * Base Component Class
