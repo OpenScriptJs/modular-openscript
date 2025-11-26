@@ -1,10 +1,11 @@
 {
   "name": "modular-openscriptjs",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
   "type": "module",
   "main": "./dist/modular-openscriptjs.umd.js",
   "module": "./dist/modular-openscriptjs.es.js",
+  "types": "./index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/modular-openscriptjs.es.js",
@@ -22,6 +23,7 @@
     "templates",
     "build/vite-plugin-openscript.js",
     "styles",
+    "index.d.ts",
     "README.md",
     "LICENSE"
   ],
