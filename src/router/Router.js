@@ -1,4 +1,3 @@
-import { h } from "../component/h.js"; // Assuming h is here
 import { container } from "../core/Container.js";
 import State from "../core/State.js"; // Assuming State is in core
 
@@ -337,6 +336,7 @@ export default class Router {
    */
   to(path, qs = {}) {
     if (this.isQualifiedUrl(path)) {
+      const h = container.resolve("h");
       let link = h.a({
         href: path,
         style: "display: none;",

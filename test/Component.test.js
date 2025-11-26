@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Component from "../src/component/Component.js";
-import { h } from "../src/component/h.js";
 import State from "../src/core/State.js";
+import { app } from "../src/index.js";
+
+// Get h from container, not at module level
+let h;
+
+beforeEach(() => {
+  // Initialize h from container
+  h = app("h");
+});
 
 describe("Component", () => {
   describe("Component Creation", () => {
@@ -135,7 +143,6 @@ describe("Component", () => {
         }
       }
 
-      
       const component = new MountEventComponent();
       await component.mount();
       h.MountEventComponent();

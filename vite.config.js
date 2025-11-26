@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import openScriptComponentPlugin from "./build/vite-plugin-openscript.js";
+import { openScriptComponentPlugin } from "./build/vite-plugin-openscript.js";
 
 export default defineConfig({
   plugins: [openScriptComponentPlugin()],

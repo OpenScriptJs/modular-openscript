@@ -2,10 +2,6 @@ import Component from "../component/Component.js";
 import { namespace } from "../utils/helpers.js";
 import { container } from "./Container.js";
 import MarkupEngine from "../component/MarkupEngine.js";
-import { h } from "../component/h.js";
-/**
- * @type MarkupEngine
- */
 
 /**
  * AutoLoads a class from a file
@@ -349,6 +345,10 @@ export default class AutoLoader {
    */
   async setFile(names, content) {
     namespace(names[0]);
+    /**
+     * @type MarkupEngine
+     */
+    const h = container.resolve("h");
 
     let obj = window;
     let final = names.slice(0, names.length - 1);

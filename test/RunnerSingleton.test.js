@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import Runner from "../src/core/Runner.js";
 import Component from "../src/component/Component.js";
 import Mediator from "../src/mediator/Mediator.js";
 import Listener from "../src/broker/Listener.js";
-import { container } from "../src/core/Container.js";
 import { app } from "../src/index.js";
 
 describe("Runner with IoC Container Singletons", () => {
@@ -23,7 +22,7 @@ describe("Runner with IoC Container Singletons", () => {
 
       await runner.run(TestComponent);
       const classKey = runner.getClassKey(TestComponent);
-      const instance = container.resolve(classKey);
+      const instance = app(classKey);
 
       expect(instance).toBeDefined();
       expect(instance).toBeInstanceOf(TestComponent);
@@ -39,11 +38,11 @@ describe("Runner with IoC Container Singletons", () => {
       // First run
       await runner.run(TestComponent);
       const classKey = runner.getClassKey(TestComponent);
-      const firstInstance = container.resolve(classKey);
+      const firstInstance = app(classKey);
 
       // Second run - should retrieve same instance from container
       await runner.run(TestComponent);
-      const secondInstance = container.resolve(classKey);
+      const secondInstance = app(classKey);
 
       expect(secondInstance).toBe(firstInstance);
     });
@@ -57,7 +56,7 @@ describe("Runner with IoC Container Singletons", () => {
       const classKey = runner.getClassKey(functionalComponent);
 
       // Functional components are not singletons
-      expect(container.has(classKey)).toBe(false);
+      expect(app().has(classKey)).toBe(false);
     });
   });
 
@@ -67,7 +66,7 @@ describe("Runner with IoC Container Singletons", () => {
 
       await runner.run(TestMediator);
       const classKey = runner.getClassKey(TestMediator);
-      const instance = container.resolve(classKey);
+      const instance = app(classKey);
 
       expect(instance).toBeDefined();
       expect(instance).toBeInstanceOf(TestMediator);
@@ -82,7 +81,7 @@ describe("Runner with IoC Container Singletons", () => {
 
       await runner.run(TestListener);
       const classKey = runner.getClassKey(TestListener);
-      const instance = container.resolve(classKey);
+      const instance = app(classKey);
 
       expect(instance).toBeDefined();
       expect(instance).toBeInstanceOf(TestListener);
@@ -100,7 +99,7 @@ describe("Runner with IoC Container Singletons", () => {
       // First run - registers the component
       await runner.run(TestComponent);
       const classKey = runner.getClassKey(TestComponent);
-      const instance = container.resolve(classKey);
+      const instance = app(classKey);
 
       expect(instance.__ojsRegistered).toBe(true);
 

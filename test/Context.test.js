@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Context from "../src/core/Context.js";
-import { putContext, context, container } from "../src/index.js";
+import { putContext, context, container, app } from "../src/index.js";
 import State from "../src/core/State.js";
 
 describe("Context", () => {
   beforeEach(() => {
+    // Ensure container is initialized
+    app("h");
+
     // Clear context map to ensure fresh state for each test
     const contextProvider = container.resolve("contextProvider");
     if (contextProvider && contextProvider.map) {

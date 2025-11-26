@@ -2,7 +2,8 @@
  * Root Application Component
  */
 
-import { Component, app, ojs } from "modular-openscriptjs";
+import { Component, app, ojs } from "modular-openscriptjs"
+
 import Counter from "./Counter.js";
 
 const h = app("h");

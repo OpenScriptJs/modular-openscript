@@ -1,243 +1,191 @@
+import fs from "fs";
+import path from "path";
+import { normalizePath } from "vite";
+
 /**
- * Vite Plugin: OpenScript Component Name Preserver
- *
- * This plugin transforms OpenScript component files before bundling to add
- * explicit component names that survive minification.
- *
- * Problem: When Vite minifies code, class names change (e.g., TodoApp -> t),
- * breaking OpenScript's component registration which relies on constructor.name
- *
- * Solution: Parse component files and inject the component name explicitly
- * in the constructor, making it immune to minification.
+ * OpenScript Component Auto-Import Plugin
+ * Automatically discovers components and provides IDE autocomplete + bundling
  */
+export function openScriptComponentPlugin(options = {}) {
+  const {
+    componentsDir = "src/components",
+    autoRegister = true,
+    generateTypes = true,
+  } = options;
 
-import { parse } from "@babel/parser";
-import traverse from "@babel/traverse";
-import generate from "@babel/generator";
+  let config;
+  let components = [];
+  const virtualModuleId = "virtual:openscript-components";
+  const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
-export default function openScriptComponentPlugin() {
-	return {
-		name: "vite-plugin-openscript-components",
+  return {
+    name: "openscript-component-plugin",
 
-		// Only transform JS/TS files
-		transform(code, id) {
-			// Skip node_modules and non-component files
-			if (id.includes("node_modules")) {
-				return null;
-			}
+    configResolved(resolvedConfig) {
+      config = resolvedConfig;
+    },
 
-			// Only process files that likely contain components
-			if (
-				!code.includes("extends Component") &&
-				!code.includes("extend Component") &&
-				!code.includes("h.") &&
-				!code.includes("h[")
-			) {
-				return null;
-			}
+    buildStart() {
+      // Scan components directory
+      const componentsPath = path.resolve(config.root, componentsDir);
 
-			try {
-				// Parse the code into an AST
-				const ast = parse(code, {
-					sourceType: "module",
-					plugins: ["jsx", "typescript", "decorators-legacy"],
-				});
+      if (!fs.existsSync(componentsPath)) {
+        console.warn(
+          `[OpenScript] Components directory not found: ${componentsPath}`
+        );
+        return;
+      }
 
-				let modified = false;
+      // Find all component files
+      components = scanComponents(componentsPath);
 
-				// Traverse the AST to find component classes
-				traverse.default(ast, {
-					ClassDeclaration(path) {
-						const node = path.node;
+      console.log(
+        `[OpenScript] Found ${components.length} components:`,
+        components.map((c) => c.name).join(", ")
+      );
 
-						// Check if this class extends Component
-						if (!node.superClass) return;
+      // Generate TypeScript definitions if enabled
+      if (generateTypes) {
+        generateTypeDefinitions(config.root, componentsDir, components);
+      }
+    },
 
-						const extendsComponent =
-							node.superClass.name === "Component" ||
-							node.superClass.property?.name === "Component";
+    resolveId(id) {
+      if (id === virtualModuleId) {
+        return resolvedVirtualModuleId;
+      }
+    },
 
-						if (!extendsComponent) return;
+    load(id) {
+      if (id === resolvedVirtualModuleId) {
+        // Generate virtual module that imports all components
+        return generateVirtualModule(componentsDir, components, autoRegister);
+      }
+    },
 
-						// Get the component name
-						const componentName = node.id.name;
+    // HMR support
+    handleHotUpdate({ file, server }) {
+      if (file.includes(componentsDir)) {
+        // Reload virtual module when components change
+        const module = server.moduleGraph.getModuleById(
+          resolvedVirtualModuleId
+        );
+        if (module) {
+          server.moduleGraph.invalidateModule(module);
+          return [module];
+        }
+      }
+    },
+  };
+}
 
-						// Check if constructor exists
-						let hasConstructor = false;
-						let constructorPath = null;
+/**
+ * Scan components directory recursively
+ */
+function scanComponents(dir, basePath = "") {
+  const components = [];
 
-						for (const member of node.body.body) {
-							if (
-								member.type === "ClassMethod" &&
-								member.kind === "constructor"
-							) {
-								hasConstructor = true;
-								constructorPath = member;
-								break;
-							}
-						}
+  if (!fs.existsSync(dir)) return components;
 
-						if (hasConstructor && constructorPath) {
-							// Check if super() exists and add name assignment after it
-							const body = constructorPath.body.body;
-							let superIndex = -1;
+  const files = fs.readdirSync(dir, { withFileTypes: true });
 
-							for (let i = 0; i < body.length; i++) {
-								const stmt = body[i];
-								if (
-									stmt.type === "ExpressionStatement" &&
-									stmt.expression.type === "CallExpression" &&
-									stmt.expression.callee.type === "Super"
-								) {
-									superIndex = i;
-									break;
-								}
-							}
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+    const relativePath = path.join(basePath, file.name);
 
-							// Check if name is already set
-							const hasNameAssignment = body.some(
-								(stmt) =>
-									stmt.type === "ExpressionStatement" &&
-									stmt.expression.type ===
-										"AssignmentExpression" &&
-									stmt.expression.left.property?.name ===
-										"name"
-							);
+    if (file.isDirectory()) {
+      // Recursively scan subdirectories
+      components.push(...scanComponents(fullPath, relativePath));
+    } else if (file.name.endsWith(".js") && !file.name.endsWith(".test.js")) {
+      // Extract component name from filename
+      const name = path.basename(file.name, ".js");
 
-							if (superIndex !== -1 && !hasNameAssignment) {
-								// Insert `this.name = 'ComponentName';` after super()
-								body.splice(superIndex + 1, 0, {
-									type: "ExpressionStatement",
-									expression: {
-										type: "AssignmentExpression",
-										operator: "=",
-										left: {
-											type: "MemberExpression",
-											object: { type: "ThisExpression" },
-											property: {
-												type: "Identifier",
-												name: "name",
-											},
-											computed: false,
-										},
-										right: {
-											type: "StringLiteral",
-											value: componentName,
-										},
-									},
-								});
-								modified = true;
-							}
-						} else {
-							// No constructor exists, add one with super() and name assignment
-							node.body.body.unshift({
-								type: "ClassMethod",
-								kind: "constructor",
-								key: {
-									type: "Identifier",
-									name: "constructor",
-								},
-								params: [
-									{
-										type: "RestElement",
-										argument: {
-											type: "Identifier",
-											name: "args",
-										},
-									},
-								],
-								body: {
-									type: "BlockStatement",
-									body: [
-										{
-											type: "ExpressionStatement",
-											expression: {
-												type: "CallExpression",
-												callee: { type: "Super" },
-												arguments: [
-													{
-														type: "SpreadElement",
-														argument: {
-															type: "Identifier",
-															name: "args",
-														},
-													},
-												],
-											},
-										},
-										{
-											type: "ExpressionStatement",
-											expression: {
-												type: "AssignmentExpression",
-												operator: "=",
-												left: {
-													type: "MemberExpression",
-													object: {
-														type: "ThisExpression",
-													},
-													property: {
-														type: "Identifier",
-														name: "name",
-													},
-													computed: false,
-												},
-												right: {
-													type: "StringLiteral",
-													value: componentName,
-												},
-											},
-										},
-									],
-								},
-							});
-							modified = true;
-						}
-					},
+      // Skip non-component files (lowercase, index, etc.)
+      if (name[0] === name[0].toUpperCase() && name !== "index") {
+        components.push({
+          name,
+          path: relativePath.replace(/\\/g, "/"),
+        });
+      }
+    }
+  }
 
-					// Transform h.div(...) to h['div'](...)
-					// This prevents minification from mangling element/component names
-					MemberExpression(path) {
-						const node = path.node;
+  return components;
+}
 
-						// Only transform if:
-						// 1. Object is identifier 'h'
-						// 2. Property is accessed with dot notation (not already computed)
-						// 3. Not already a computed member expression
-						if (
-							node.object.type === "Identifier" &&
-							node.object.name === "h" &&
-							!node.computed &&
-							node.property.type === "Identifier"
-						) {
-							// Convert to computed member expression: h['propertyName']
-							node.computed = true;
-							node.property = {
-								type: "StringLiteral",
-								value: node.property.name,
-							};
-							modified = true;
-						}
-					},
-				});
+/**
+ * Generate TypeScript definition file for IDE autocomplete
+ */
+function generateTypeDefinitions(root, componentsDir, components) {
+  const dtsPath = path.resolve(root, "src/openscript-components.d.ts");
 
-				// If we modified the AST, generate new code
-				if (modified) {
-					const output = generate.default(ast, {}, code);
-					return {
-						code: output.code,
-						map: output.map,
-					};
-				}
+  const imports = components
+    .map(
+      (c) =>
+        `import type ${c.name} from './${componentsDir}/${c.path.replace(
+          ".js",
+          ""
+        )}';`
+    )
+    .join("\n");
 
-				return null;
-			} catch (error) {
-				// If parsing fails, log and return original code
-				console.warn(
-					`Failed to parse ${id} for OpenScript component transformation:`,
-					error.message
-				);
-				return null;
-			}
-		},
-	};
+  const properties = components
+    .map((c) => `    ${c.name}: typeof ${c.name};`)
+    .join("\n");
+
+  const content = `// Auto-generated by OpenScript - DO NOT EDIT
+// This file provides IDE autocomplete for h.ComponentName
+
+import type { MarkupEngine } from 'modular-openscriptjs';
+
+${imports}
+
+declare module 'modular-openscriptjs' {
+  interface MarkupEngine {
+${properties}
+  }
+}
+
+export {};
+`;
+
+  fs.writeFileSync(dtsPath, content, "utf-8");
+  console.log(`[OpenScript] Generated type definitions: ${dtsPath}`);
+}
+
+/**
+ * Generate virtual module content that imports and registers all components
+ */
+function generateVirtualModule(componentsDir, components, autoRegister) {
+  const imports = components
+    .map((c) => `import ${c.name} from '../${componentsDir}/${c.path}';`)
+    .join("\n");
+
+  const exports = components.map((c) => c.name).join(", ");
+
+  const registration = autoRegister
+    ? `
+// Auto-register all components
+const components = { ${exports} };
+
+export async function registerAllComponents() {
+  for (const [name, Component] of Object.entries(components)) {
+    const instance = new Component();
+    await instance.mount();
+  }
+}
+`
+    : "";
+
+  return `// Auto-generated by OpenScript Component Plugin
+${imports}
+
+${registration}
+
+// Export all components for manual use
+export { ${exports} };
+
+// Export component registry
+export default { ${exports} };
+`;
 }

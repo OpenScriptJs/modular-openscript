@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import Component from "../src/component/Component.js";
 import Mediator from "../src/mediator/Mediator.js";
 import Listener from "../src/broker/Listener.js";
 import { app } from "../src/index.js";
+
+beforeEach(() => {
+  app("h");
+});
 
 console.log("Running RegistrationGuard.test.js");
 

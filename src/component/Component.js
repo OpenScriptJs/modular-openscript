@@ -4,8 +4,6 @@ import BrokerRegistrar from "../broker/BrokerRegistrar.js";
 import State from "../core/State.js";
 import { container } from "../core/Container.js";
 
-const h = container.resolve("h");
-
 /**
  * Base Component Class
  */
@@ -113,6 +111,7 @@ export default class Component {
       routeChanged: () => {
         setTimeout(() => {
           if (this.markup().length == 0) {
+            const h = container.resolve("h");
             if (this.isAnonymous) {
               return h.deleteComponent(this.name);
             }
@@ -146,6 +145,7 @@ export default class Component {
     if (!Array.isArray(args)) {
       args = [args];
     }
+    const h = container.resolve("h");
     return h.func([this, name], ...args);
   }
 
@@ -167,6 +167,7 @@ export default class Component {
       );
     }
 
+    const h = container.resolve("h");
     return h.getComponent(splitted[0]).method(splitted[1], args);
   }
 
@@ -255,6 +256,7 @@ export default class Component {
   getDeclaredListeners() {
     let obj = this;
     let seen = new Set();
+    const h = container.resolve("h");
 
     do {
       if (!(obj instanceof Component)) break;
@@ -343,7 +345,7 @@ export default class Component {
       );
       return;
     }
-
+    const h = container.resolve("h");
     h.component(this.name, this);
 
     this.claimListeners();
@@ -376,6 +378,7 @@ export default class Component {
    * visible
    */
   checkVisibility() {
+    const h = container.resolve("h");
     let elem = h.dom.querySelector(`ojs-${this.kebab(this.name)}`);
 
     if (elem && elem.parentElement?.style.display !== "none" && !this.visible) {
@@ -422,7 +425,7 @@ export default class Component {
    */
   async bindComponent() {
     this.emit(this.EVENTS.prebind);
-
+    const h = container.resolve("h");
     let all = h.dom.querySelectorAll(`ojs-${this.kebab(this.name)}-tmp--`);
 
     if (all.length == 0 && !this.bindCalled) {
@@ -469,6 +472,7 @@ export default class Component {
    * @returns
    */
   markup(parent = null) {
+    const h = container.resolve("h");
     if (!parent) parent = h.dom;
 
     return parent.querySelectorAll(`ojs-${this.kebab(this.name)}`);
@@ -550,6 +554,7 @@ export default class Component {
    * Gets all the listeners for itself and adds them to itself
    */
   claimListeners() {
+    const h = container.resolve("h");
     if (!h.eventsMap.has(this.name)) return;
 
     let events = h.eventsMap.get(this.name);
@@ -596,6 +601,7 @@ export default class Component {
    * @returns {DocumentFragment|HTMLElement|String|Array<DocumentFragment|HTMLElement|String>}
    */
   render(...args) {
+    const h = container.resolve("h");
     return h.ojs(...args);
   }
 
@@ -671,6 +677,7 @@ export default class Component {
    * @returns
    */
   wrap(...args) {
+    const h = container.resolve("h");
     const lastArg = args[args.length - 1];
     let { index, parent, resetParent, states, replaceParent, firstOfParent } =
       this.getParentAndListen(args);

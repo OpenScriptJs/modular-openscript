@@ -1,8 +1,8 @@
 import DOMReconciler from "./DOMReconciler.js";
 import Utils from "../utils/Utils.js";
-import { h } from "./h.js"; // Circular dependency? h is used in MarkupEngine
 import Component from "./Component.js";
 import State from "../core/State.js";
+import { container } from "../core/Container.js";
 
 /**
  * Base Markup Engine Class
@@ -494,6 +494,7 @@ export default class MarkupEngine {
 				sc.forEach((c) => {
 					if (!isComponentName(c.tagName.toLowerCase())) return;
 					let cmpName = getComponentName(c.tagName);
+					const h = container.resolve("h");
 					h.getComponent(cmpName)?.emit(event, eventParams);
 				});
 			}

@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { h } from "../src/component/h.js";
+import { app, MarkupHandler } from "../src/index.js";
+
+// Get h inside each test, not at module level
+let h;
 
 describe("Markup Engine (h)", () => {
+  beforeEach(() => {
+    // Initialize h from container
+    h = MarkupHandler.proxy();
+  });
+
   describe("Basic Element Creation", () => {
     it("should create div element", () => {
       const element = h.div("Hello");
@@ -107,7 +115,6 @@ describe("Markup Engine (h)", () => {
   describe("Document Fragments", () => {
     it("should create fragment with h.$()", () => {
       const fragment = h.$(h.div("First"), h.div("Second"));
-
 
       expect(fragment.tagName).toBe("OJS-SPECIAL-FRAGMENT");
       expect(fragment.childNodes.length).toBe(2);

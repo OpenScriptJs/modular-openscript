@@ -21,7 +21,6 @@ import Component from "./component/Component.js";
 import DOMReconciler from "./component/DOMReconciler.js";
 import MarkupEngine from "./component/MarkupEngine.js";
 import MarkupHandler from "./component/MarkupHandler.js";
-import { h } from "./component/h.js";
 
 import Utils from "./utils/Utils.js";
 import DOM from "./utils/DOM.js";
@@ -34,6 +33,7 @@ const contextProvider = new ContextProvider();
 const mediatorManager = new MediatorManager();
 const loader = new AutoLoader();
 const autoload = new AutoLoader();
+const h = MarkupHandler.proxy();
 
 // Register global instances in container
 container.value("broker", broker);
@@ -82,9 +82,50 @@ const coalesce = Utils.coalesce;
 const dom = DOM;
 
 /**
- * Resolves an instance from the container or returns the container if no instance is provided
- * @param {string} instance
- * @returns {Container|Object}
+ * Access services from the IoC container
+ * @overload
+ * @param {'h'} instance - Get the MarkupEngine instance
+ * @returns {MarkupEngine}
+ */
+/**
+ * @overload
+ * @param {'router'} instance - Get the Router instance
+ * @returns {Router}
+ */
+/**
+ * @overload
+ * @param {'broker'} instance - Get the Broker instance
+ * @returns {Broker}
+ */
+/**
+ * @overload
+ * @param {'contextProvider'} instance - Get the ContextProvider instance
+ * @returns {ContextProvider}
+ */
+/** 
+ * @overload
+ * @param {'mediatorManager'} instance - Get the MediatorManager instance
+ * @returns {MediatorManager}
+ */
+/**
+ * @overload
+ * @param {'loader'} instance - Get the AutoLoader instance
+ * @returns {AutoLoader}
+ */
+/**
+ * @overload
+ * @param {undefined} instance - Get the Container itself
+ * @returns {Container}
+ */
+/**
+ * @overload
+ * @param {string} instance - Get any registered service by name
+ * @returns {any}
+ */
+/**
+ * Access a service from the IoC container or get the container itself
+ * @param {string|undefined} [instance] - Service name or undefined to get container
+ * @returns {any}
  */
 const app = (instance = null) => {
   if (instance === null) return container;
