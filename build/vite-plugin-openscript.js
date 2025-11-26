@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { normalizePath } from "vite";
+import MagicString from "magic-string";
 
 /**
  * OpenScript Component Auto-Import Plugin
@@ -59,7 +60,12 @@ export function openScriptComponentPlugin(options = {}) {
     load(id) {
       if (id === resolvedVirtualModuleId) {
         // Generate virtual module that imports all components
-        return generateVirtualModule(componentsDir, components, autoRegister);
+        return generateVirtualModule(
+          config.root,
+          componentsDir,
+          components,
+          autoRegister
+        );
       }
     },
 
@@ -74,32 +80,39 @@ export function openScriptComponentPlugin(options = {}) {
       const className = classMatch[1];
 
       // If code already sets this.name explicitly, skip (simple check)
-      // We still use the runtime check (!this.name) to be safe, but this avoids double injection if we run multiple times
       if (code.includes(`this.name = "${className}"`)) return;
+
+      const s = new MagicString(code);
 
       if (code.includes("constructor")) {
         // Inject after super()
-        // Matches super(...) or super() with optional semicolon
-        return code.replace(
-          /(super\s*\([^)]*\)\s*;?)/,
-          `$1\n    if (!this.name) this.name = "${className}";`
-        );
+        const superMatch = code.match(/(super\s*\([^)]*\)\s*;?)/);
+        if (superMatch) {
+          const index = superMatch.index + superMatch[0].length;
+          s.appendRight(
+            index,
+            `\n    if (!this.name) this.name = "${className}";`
+          );
+        }
       } else {
         // No constructor, inject one
-        // Find the first opening brace after class definition
         const classDef = classMatch[0];
         const openBraceIndex = code.indexOf("{", code.indexOf(classDef));
 
         if (openBraceIndex !== -1) {
-          return (
-            code.slice(0, openBraceIndex + 1) +
-            `\n  constructor() { super(); this.name = "${className}"; }` +
-            code.slice(openBraceIndex + 1)
+          s.appendRight(
+            openBraceIndex + 1,
+            `\n  constructor() { super(); this.name = "${className}"; }`
           );
         }
       }
 
-      return code;
+      if (s.hasChanged()) {
+        return {
+          code: s.toString(),
+          map: s.generateMap({ source: id, includeContent: true }),
+        };
+      }
     },
 
     // HMR support
@@ -195,9 +208,14 @@ export {};
 /**
  * Generate virtual module content that imports and registers all components
  */
-function generateVirtualModule(componentsDir, components, autoRegister) {
+function generateVirtualModule(root, componentsDir, components, autoRegister) {
   const imports = components
-    .map((c) => `import ${c.name} from '../${componentsDir}/${c.path}';`)
+    .map((c) => {
+      const absolutePath = normalizePath(
+        path.resolve(root, componentsDir, c.path)
+      );
+      return `import ${c.name} from '${absolutePath}';`;
+    })
     .join("\n");
 
   const exports = components.map((c) => c.name).join(", ");
