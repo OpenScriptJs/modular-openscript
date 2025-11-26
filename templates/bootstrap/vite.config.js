@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { openScriptComponentPlugin } from '../..';
 
 export default defineConfig({
     server: {
@@ -8,5 +9,12 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: true
-    }
+    },
+    plugins: [
+        openScriptComponentPlugin({
+            componentsDir: 'src/components',
+            autoRegister: true,
+            generateTypes: true
+        })
+    ]   
 });

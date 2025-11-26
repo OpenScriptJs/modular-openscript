@@ -63,6 +63,45 @@ export function openScriptComponentPlugin(options = {}) {
       }
     },
 
+    transform(code, id) {
+      // Only transform files in components directory
+      if (!id.includes(componentsDir) || !id.endsWith(".js")) return;
+
+      // Find class definition
+      const classMatch = code.match(/class\s+(\w+)\s+extends\s+Component/);
+      if (!classMatch) return;
+
+      const className = classMatch[1];
+
+      // If code already sets this.name explicitly, skip (simple check)
+      // We still use the runtime check (!this.name) to be safe, but this avoids double injection if we run multiple times
+      if (code.includes(`this.name = "${className}"`)) return;
+
+      if (code.includes("constructor")) {
+        // Inject after super()
+        // Matches super(...) or super() with optional semicolon
+        return code.replace(
+          /(super\s*\([^)]*\)\s*;?)/,
+          `$1\n    if (!this.name) this.name = "${className}";`
+        );
+      } else {
+        // No constructor, inject one
+        // Find the first opening brace after class definition
+        const classDef = classMatch[0];
+        const openBraceIndex = code.indexOf("{", code.indexOf(classDef));
+
+        if (openBraceIndex !== -1) {
+          return (
+            code.slice(0, openBraceIndex + 1) +
+            `\n  constructor() { super(); this.name = "${className}"; }` +
+            code.slice(openBraceIndex + 1)
+          );
+        }
+      }
+
+      return code;
+    },
+
     // HMR support
     handleHotUpdate({ file, server }) {
       if (file.includes(componentsDir)) {
