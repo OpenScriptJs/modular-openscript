@@ -169,16 +169,29 @@ function scanComponents(dir, basePath = "") {
  * Generate TypeScript definition file for IDE autocomplete
  */
 function generateTypeDefinitions(root, componentsDir, components) {
-  const dtsPath = path.resolve(root, "src/openscript-components.d.ts");
+  // Place d.ts in the parent directory of componentsDir
+  const componentsAbsDir = path.resolve(root, componentsDir);
+  const dtsDir = path.dirname(componentsAbsDir);
+  const dtsPath = path.resolve(dtsDir, "openscript-components.d.ts");
 
   const imports = components
-    .map(
-      (c) =>
-        `import type ${c.name} from './${componentsDir}/${c.path.replace(
-          ".js",
-          ""
-        )}';`
-    )
+    .map((c) => {
+      const componentAbsPath = path.resolve(componentsAbsDir, c.path);
+      let relativePath = path.relative(dtsDir, componentAbsPath);
+
+      // Normalize to forward slashes
+      relativePath = normalizePath(relativePath);
+
+      // Remove extension
+      relativePath = relativePath.replace(/\.\w+$/, "");
+
+      // Ensure it starts with ./ or ../
+      if (!relativePath.startsWith(".") && !relativePath.startsWith("/")) {
+        relativePath = "./" + relativePath;
+      }
+
+      return `import type ${c.name} from '${relativePath}';`;
+    })
     .join("\n");
 
   const properties = components
