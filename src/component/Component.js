@@ -818,6 +818,7 @@ export default class Component {
        * @returns
        */
       render(state, callback, ...args) {
+        let h = container.resolve("h");
         let markup = callback(state, ...args);
         return h[`ojs-wrapper`](markup, ...args);
       }
