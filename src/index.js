@@ -35,6 +35,7 @@ const loader = new AutoLoader();
 const autoload = new AutoLoader();
 const h = MarkupHandler.proxy();
 
+
 // Register global instances in container
 container.value("broker", broker);
 container.value("router", router);
@@ -43,6 +44,7 @@ container.value("mediatorManager", mediatorManager);
 container.value("loader", loader);
 container.value("autoload", autoload);
 container.value("h", h);
+container.value("component", component);
 
 let ojsRouterEvents = {
   ojs: {

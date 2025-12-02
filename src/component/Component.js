@@ -254,6 +254,14 @@ export default class Component {
    * Get all Emitters declared in the component
    */
   getDeclaredListeners() {
+    
+    if (this.__ojsRegistered) {
+      console.warn(
+        `Component "${this.name}" is already registered. Skipping duplicate registration.`
+      );
+      return;
+    }
+
     let obj = this;
     let seen = new Set();
     const h = container.resolve("h");
