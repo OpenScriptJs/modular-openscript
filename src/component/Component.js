@@ -105,7 +105,6 @@ export default class Component {
     this.on(this.EVENTS.bound, (th) => (th.bound = true));
     this.on(this.EVENTS.mounted, (th) => (th.mounted = true));
     this.on(this.EVENTS.visible, (th) => (th.visible = true));
-    this.getDeclaredListeners();
 
     this.$$ojs = {
       routeChanged: () => {
@@ -360,9 +359,6 @@ export default class Component {
     this.emit(this.EVENTS.premount);
     await this.bindComponent();
     this.emit(this.EVENTS.mounted);
-
-    // Mark as registered
-    this.__ojsRegistered = true;
   }
 
   /**

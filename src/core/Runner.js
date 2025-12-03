@@ -23,40 +23,50 @@ export default class Runner {
   }
 
   async run(...cls) {
+    container.value(
+      "__ojs_registrations",
+      container.resolve("__ojs_registrations") ?? {}
+    );
+
+    const registrations = container.resolve("__ojs_registrations");
+
     for (let i = 0; i < cls.length; i++) {
       let c = cls[i];
       let instance;
+      const classKey = this.getClassKey(c);
 
       if (!this.isClass(c)) {
         // Functional component - always create new instance (not a singleton)
         instance = new Component(c.name);
         instance.render = c.bind(instance);
       } else {
-        // For classes, check if singleton exists in container
-        const classKey = this.getClassKey(c);
+        if (registrations[classKey] === "ongoing") {
+          continue;
+        }
 
         if (container.has(classKey)) {
-          // Retrieve existing singleton from container
           instance = container.resolve(classKey);
-
-          // Skip if already registered (has __ojsRegistered flag)
           if (instance.__ojsRegistered) {
             continue;
           }
         } else {
-          // Create new instance and register as singleton in container
           instance = new c();
           container.singleton(classKey, () => instance, []);
+          registrations[classKey] = "ongoing";
         }
       }
 
       if (instance instanceof Component) {
         instance.getDeclaredListeners();
         await instance.mount();
+        instance.__ojsRegistered = true;
+        registrations[classKey] = "completed";
       } else if (instance instanceof Mediator || instance instanceof Listener) {
         await instance.register();
+        registrations[classKey] = "completed";
       } else if (instance instanceof Context) {
         // Context instances don't need registration
+        registrations[classKey] = "completed";
       } else {
         throw Error(
           `You can only pass declarations which extend Component, Mediator or Listener`

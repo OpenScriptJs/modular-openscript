@@ -127,12 +127,13 @@ const dom = DOM;
 /**
  * Access a service from the IoC container or get the container itself
  * @param {string|undefined} [instance] - Service name or undefined to get container
+ * @param {any} [defaultValue] - Default value to return if service is not found
  * @returns {any}
  */
-const app = (instance = null) => {
+const app = (instance = null, defaultValue = null) => {
   if (instance === null) return container;
 
-  return container.resolve(instance);
+  return container.resolve(instance, defaultValue);
 };
 
 // Export everything

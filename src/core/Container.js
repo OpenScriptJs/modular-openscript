@@ -90,9 +90,10 @@ export default class Container {
   /**
    * Resolve a service by name
    * @param {string} name - Service identifier
+   * @param {any} defaultValue - Default value to return if service is not found
    * @returns {any} - The resolved service instance
    */
-  resolve(name) {
+  resolve(name, defaultValue = null) {
     // Check for circular dependencies
     if (this.resolvingStack.has(name)) {
       const stack = Array.from(this.resolvingStack).join(" -> ");
@@ -101,7 +102,7 @@ export default class Container {
 
     const service = this.services.get(name);
     if (!service) {
-      throw new Error(`Service "${name}" not registered in container`);
+      return defaultValue;
     }
 
     // Return cached singleton instance
