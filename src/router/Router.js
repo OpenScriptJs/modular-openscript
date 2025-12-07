@@ -475,11 +475,27 @@ export default class Router {
    * @returns
    */
   is(nameOrRoute) {
-    if (nameOrRoute == this.__resolved) return true;
+    //if the nameOrRoute is a route, remove the trailing slash
+    if (nameOrRoute.endsWith("/")) {
+      nameOrRoute = nameOrRoute.slice(0, -1);
+    }
+
+    let resolved = this.__resolved;
+
+    if (resolved.endsWith("/")) {
+      resolved = resolved.slice(0, -1);
+    }
+
+    if (nameOrRoute == resolved) return true;
 
     for (let [n, r] of this.nameMap) {
       if (n == nameOrRoute) {
-        return r == this.__resolved;
+        
+        if (r.endsWith("/")) {
+          r = r.slice(0, -1);
+        }
+
+        return r == resolved;
       }
     }
 
