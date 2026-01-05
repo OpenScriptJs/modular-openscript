@@ -43,10 +43,7 @@ export default class MarkupEngine {
     /**
      *
      * @param {string} name component name
-     * @param {Component} component OpenScript component for rendering.
-     *
-     *
-     * @return {HTMLElement|Array<HTMLElement|String>}
+     * @param {class<Component>} component OpenScript component class.
      */
     this.component = (name, component) => {
       if (!(typeof name === "string")) {
@@ -55,9 +52,9 @@ export default class MarkupEngine {
         );
       }
 
-      if (!(component instanceof Component)) {
+      if (!(component.prototype instanceof Component)) {
         throw new Error(
-          `MarkupEngine.Exception: The component for ${name} must be an Component component. ${component.constructor.name} given`
+          `MarkupEngine.Exception: The component for ${name} must be an Component component. ${component.name} given`
         );
       }
 

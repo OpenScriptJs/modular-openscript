@@ -95,6 +95,12 @@ export default class Component {
      */
     this.emitter = new Emitter();
 
+    /**
+     * List of events that the component is listening to
+     * from the broker
+     */
+    this.__brokerEvents__ = {};
+
     this.isAnonymous = false;
 
     this.name = name ?? this.constructor.name;
@@ -167,7 +173,21 @@ export default class Component {
     }
 
     const h = container.resolve("h");
-    return h.getComponent(splitted[0]).method(splitted[1], args);
+    let cls = h.getComponent(splitted[0]);
+
+    if (!cls) {
+      console.error(`Component ${splitted[0]} not found`);
+      return;
+    }
+
+    let obj = new cls();
+
+    if (!obj.method) {
+      console.error(`Method ${splitted[1]} not found in ${splitted[0]}`);
+      return;
+    }
+
+    return obj.method(splitted[1], args);
   }
 
   /**
@@ -253,7 +273,6 @@ export default class Component {
    * Get all Emitters declared in the component
    */
   getDeclaredListeners() {
-    
     if (this.__ojsRegistered) {
       console.warn(
         `Component "${this.name}" is already registered. Skipping duplicate registration.`
@@ -310,7 +329,7 @@ export default class Component {
 
             for (let j = 0; j < events.length; j++) {
               let ev = events[j];
-
+ 
               if (!ev.length) continue;
 
               h[m](cmp, ev, (component, event, ...args) => {
@@ -524,7 +543,7 @@ export default class Component {
 
   /**
    * Ensure that the action will get called
-   * even if the event was emitted previous
+   * even if the event was emitted previously
    * @param {string} event
    * @param {...function} listeners
    */

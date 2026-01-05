@@ -1,3 +1,4 @@
+import Component from "../component/Component.js";
 import { container } from "../core/Container.js";
 import { isClass } from "../utils/helpers.js";
 
@@ -65,6 +66,12 @@ export default class BrokerRegistrar {
     for (let ev of events) {
       if (ev.length === 0) continue;
       container.resolve("broker").on(ev, listener.bind(object));
+
+      if (object instanceof Component) {
+        object.__brokerEvents__ = object.__brokerEvents__ || {};
+        object.__brokerEvents__[ev] = object.__brokerEvents__[ev] || [];
+        object.__brokerEvents__[ev].push(listener);
+      }
     }
   }
 }

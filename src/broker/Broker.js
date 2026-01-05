@@ -68,6 +68,24 @@ export default class Broker {
         }
     }
 
+    off(events, listener) {
+        if (Array.isArray(events)) {
+            for (let event of events) {
+                this.off(event, listener);
+            }
+
+            return;
+        }
+
+        events = this.parseEvents(events);
+
+        for (let event of events) {
+            event = event.trim();
+
+            this.#emitter.off(event, listener);
+        }
+    }
+
     verifyEventRegistration(event) {
         if (
             this.#emitOnlyRegisteredEvents &&
