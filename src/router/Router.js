@@ -76,7 +76,7 @@ export default class Router {
 
     this.GroupedRoute = class GroupedRoute {};
 
-    this.reset = State.state(false);
+    this.reset = null;
 
     window.addEventListener("popstate", () => {
       this.reset.value = true;

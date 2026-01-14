@@ -29,6 +29,7 @@ export default class Runner {
     );
 
     const registrations = container.resolve("__ojs_registrations");
+    const h = container.resolve("h");
 
     for (let i = 0; i < cls.length; i++) {
       let c = cls[i];
@@ -36,9 +37,7 @@ export default class Runner {
       const classKey = this.getClassKey(c);
 
       if (!this.isClass(c)) {
-        // Functional component - always create new instance (not a singleton)
         instance = new Component(c.name);
-        instance.render = c.bind(instance);
       } else {
         if (registrations[classKey] === "ongoing") {
           continue;
@@ -57,15 +56,12 @@ export default class Runner {
       }
 
       if (instance instanceof Component) {
-        instance.getDeclaredListeners();
-        await instance.mount();
-        instance.__ojsRegistered = true;
         registrations[classKey] = "completed";
+        h.registerComponent(c.name, c);
       } else if (instance instanceof Mediator || instance instanceof Listener) {
         await instance.register();
         registrations[classKey] = "completed";
       } else if (instance instanceof Context) {
-        // Context instances don't need registration
         registrations[classKey] = "completed";
       } else {
         throw Error(

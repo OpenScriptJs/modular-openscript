@@ -2,77 +2,83 @@
  * Event Emitter Class
  */
 export default class Emitter {
-    constructor() {
-        this.listeners = {};
-        /**
-         * List of emitted events
-         */
-        this.emitted = {};
+  constructor() {
+    this.listeners = new Map();
+  }
+
+  addListener(eventName, fn) {
+    if (!this.listeners.has(eventName)) {
+      this.listeners.set(eventName, []);
+    }
+    this.listeners.get(eventName).push(fn);
+    return this;
+  }
+  // Attach event listener
+  on(eventName, fn) {
+    return this.addListener(eventName, fn);
+  }
+
+  // Attach event handler only once. Automatically removed.
+  once(eventName, fn) {
+    if (!this.listeners.has(eventName)) {
+      this.listeners.set(eventName, []);
     }
 
-    addListener(eventName, fn) {
-        this.listeners[eventName] = this.listeners[eventName] || [];
-        this.listeners[eventName].push(fn);
-        return this;
-    }
-    // Attach event listener
-    on(eventName, fn) {
-        return this.addListener(eventName, fn);
-    }
+    const onceWrapper = (...args) => {
+      fn(...args);
+      this.off(eventName, onceWrapper);
+    };
+    this.listeners.get(eventName).push(onceWrapper);
+    return this;
+  }
 
-    // Attach event handler only once. Automatically removed.
-    once(eventName, fn) {
-        this.listeners[eventName] = this.listeners[eventName] || [];
-        const onceWrapper = (...args) => {
-            fn(...args);
-            this.off(eventName, onceWrapper);
-        };
-        this.listeners[eventName].push(onceWrapper);
-        return this;
-    }
+  // Alias for removeListener
+  off(eventName, fn) {
+    return this.removeListener(eventName, fn);
+  }
 
-    // Alias for removeListener
-    off(eventName, fn) {
-        return this.removeListener(eventName, fn);
+  removeListener(eventName, fn) {
+    let lis = this.listeners.get(eventName);
+    if (!lis) return this;
+    for (let i = lis.length - 1; i >= 0; i--) {
+      if (lis[i] === fn) {
+        lis.splice(i, 1);
+        break; // Found and removed, break loop
+      }
     }
+    return this;
+  }
 
-    removeListener(eventName, fn) {
-        let lis = this.listeners[eventName];
-        if (!lis) return this;
-        for (let i = lis.length; i > 0; i--) {
-            if (lis[i] === fn) {
-                lis.splice(i, 1);
-                break;
-            }
-        }
-        return this;
-    }
+  // Fire the event
+  emit(eventName, ...args) {
+    let fns = this.listeners.get(eventName);
+    if (!fns) return false;
+    fns.forEach((f) => {
+      try {
+        f(...args);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+    return true;
+  }
 
-    // Fire the event
-    emit(eventName, ...args) {
-        this.emitted[eventName] = args;
+  listenerCount(eventName) {
+    let fns = this.listeners.get(eventName) || [];
+    return fns.length;
+  }
 
-        let fns = this.listeners[eventName];
-        if (!fns) return false;
-        fns.forEach((f) => {
-            try {
-                f(...args);
-            } catch (e) {
-                console.error(e);
-            }
-        });
-        return true;
-    }
+  // Get raw listeners
+  // If the once() event has been fired, then that will not be part of
+  // the return array
+  rawListeners(eventName) {
+    return this.listeners.get(eventName);
+  }
 
-    listenerCount(eventName) {
-        let fns = this.listeners[eventName] || [];
-        return fns.length;
-    }
-
-    // Get raw listeners
-    // If the once() event has been fired, then that will not be part of
-    // the return array
-    rawListeners(eventName) {
-        return this.listeners[eventName];
-    }
+  /**
+   * Clear all listeners
+   */
+  clear() {
+    this.listeners.clear();
+  }
 }

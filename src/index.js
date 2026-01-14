@@ -5,8 +5,8 @@ import State from "./core/State.js";
 import ContextProvider from "./core/ContextProvider.js";
 import Context from "./core/Context.js";
 import ProxyFactory from "./core/ProxyFactory.js";
-import AutoLoader from "./core/AutoLoader.js";
 import Container, { container } from "./core/Container.js";
+import Repository from "./core/Repository.js";
 
 import Router from "./router/Router.js";
 
@@ -15,7 +15,6 @@ import BrokerRegistrar from "./broker/BrokerRegistrar.js";
 import Listener from "./broker/Listener.js";
 
 import Mediator from "./mediator/Mediator.js";
-import MediatorManager from "./mediator/MediatorManager.js";
 
 import Component from "./component/Component.js";
 import DOMReconciler from "./component/DOMReconciler.js";
@@ -24,27 +23,27 @@ import MarkupHandler from "./component/MarkupHandler.js";
 
 import Utils from "./utils/Utils.js";
 import DOM from "./utils/DOM.js";
-import { isClass, namespace } from "./utils/helpers.js";
+import { cleanUpNode, isClass } from "./utils/helpers.js";
 
 // Initialize global instances
 const broker = new Broker();
 const router = new Router();
 const contextProvider = new ContextProvider();
-const mediatorManager = new MediatorManager();
-const loader = new AutoLoader();
-const autoload = new AutoLoader();
 const h = MarkupHandler.proxy();
-
+const repository = new Repository();
+const componentMethods = new WeakMap();
+const componentListeners = new WeakMap();
 
 // Register global instances in container
 container.value("broker", broker);
 container.value("router", router);
 container.value("contextProvider", contextProvider);
-container.value("mediatorManager", mediatorManager);
-container.value("loader", loader);
-container.value("autoload", autoload);
+container.value("componentMethods", componentMethods);
+container.value("componentListeners", componentListeners);
+container.value("repository", repository);
 container.value("h", h);
-container.value("component", component);
+
+router.reset = State.state(false);
 
 let ojsRouterEvents = {
   ojs: {
@@ -58,8 +57,6 @@ broker.registerEvents(ojsRouterEvents);
 // Global Helpers
 const state = State.state;
 const ojs = (...classDeclarations) => new Runner().run(...classDeclarations);
-const req = (qualifiedName) => loader.req(qualifiedName);
-const include = (qualifiedName) => loader.include(qualifiedName);
 const v = (state, callback = (state) => state.value, ...args) =>
   h.$anonymous(state, callback, ...args);
 const context = (name) => contextProvider.context(name);
@@ -67,12 +64,7 @@ const putContext = (referenceName, qualifiedName) =>
   contextProvider.load(referenceName, qualifiedName);
 const lazyFor = Utils.lazyFor;
 const each = Utils.each;
-const component = (name) => h.getComponent(name);
-const mediators = (names) => {
-  for (let qn of names) {
-    mediatorManager.fetchMediators(qn);
-  }
-};
+const component = (componentId) => app("repository").findComponent(componentId);
 const eData = (meta = {}, message = {}) => {
   return new EventData().meta(meta).message(message).encode();
 };
@@ -83,11 +75,28 @@ const ifElse = Utils.ifElse;
 const coalesce = Utils.coalesce;
 const dom = DOM;
 
+const addNecessaryGlobals = () => {
+  if (!window) return;
+
+  window.component = component;
+  window.each = each;
+  window.ifElse = ifElse;
+  window.coalesce = coalesce;
+  window.dom = dom;
+  window.eData = eData;
+  window.payload = payload;
+};
+
 /**
  * Access services from the IoC container
  * @overload
  * @param {'h'} instance - Get the MarkupEngine instance
  * @returns {MarkupEngine}
+ */
+/**
+ * @overload
+ * @param {'repository'} instance - Get the Repository instance
+ * @returns {Repository}
  */
 /**
  * @overload
@@ -104,15 +113,15 @@ const dom = DOM;
  * @param {'contextProvider'} instance - Get the ContextProvider instance
  * @returns {ContextProvider}
  */
-/** 
+/**
  * @overload
  * @param {'mediatorManager'} instance - Get the MediatorManager instance
  * @returns {MediatorManager}
  */
 /**
  * @overload
- * @param {'loader'} instance - Get the AutoLoader instance
- * @returns {AutoLoader}
+ * @param {'repository'} instance - Get the Repository instance
+ * @returns {Repository}
  */
 /**
  * @overload
@@ -136,6 +145,12 @@ const app = (instance = null, defaultValue = null) => {
   return container.resolve(instance, defaultValue);
 };
 
+/**
+ * Removes OpenScript modifications from a node
+ * @param {Node} node
+ */
+const removeNodeModifications = (node) => cleanUpNode(node);
+
 // Export everything
 export {
   Runner,
@@ -145,13 +160,11 @@ export {
   ContextProvider,
   Context,
   ProxyFactory,
-  AutoLoader,
   Router,
   Broker,
   BrokerRegistrar,
   Listener,
   Mediator,
-  MediatorManager,
   Component,
   DOMReconciler,
   MarkupEngine,
@@ -160,13 +173,11 @@ export {
   DOM,
   app,
   isClass,
-  namespace,
   Container,
   container,
   state,
+  repository,
   ojs,
-  req,
-  include,
   v,
   context,
   putContext,
@@ -176,10 +187,10 @@ export {
   coalesce,
   dom,
   component,
-  mediators,
   eData,
   payload,
   ojsRouterEvents,
+  removeNodeModifications,
 };
 
 // Default export object
@@ -191,13 +202,11 @@ export default {
   ContextProvider,
   Context,
   ProxyFactory,
-  AutoLoader,
   Router,
   Broker,
   BrokerRegistrar,
   Listener,
   Mediator,
-  MediatorManager,
   Component,
   DOMReconciler,
   MarkupEngine,
@@ -206,13 +215,11 @@ export default {
   DOM,
   app,
   isClass,
-  namespace,
   Container,
   container,
   state,
+  repository,
   ojs,
-  req,
-  include,
   v,
   context,
   putContext,
@@ -222,8 +229,61 @@ export default {
   coalesce,
   dom,
   component,
-  mediators,
   eData,
   payload,
   ojsRouterEvents,
+  removeNodeModifications,
 };
+
+// Add necessary globals
+addNecessaryGlobals();
+
+// clean up
+const observer = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const node of mutation.removedNodes) {
+      //iterate through all child nodes and remove modifications
+      if (node.nodeType !== 1) continue;
+
+      let childNodes = node.querySelectorAll("*");
+      for (const childNode of childNodes) {
+        removeNodeModifications(childNode);
+      }
+
+      removeNodeModifications(node);
+
+      if (/OJS-.*/g.test(node.nodeName)) {
+        node.querySelectorAll(".__ojs-c-class__").forEach((n) => {
+          let uid = Number(n.getAttribute("uid"));
+          let instance = component(uid);
+
+          if (!instance) return;
+          instance.unmount();
+          app("repository").removeComponent(uid);
+        });
+
+        let uid = Number(node.getAttribute("uid"));
+
+        if (uid) {
+          let instance = component(uid);
+
+          if (!instance) continue;
+          instance.unmount();
+          app("repository").removeComponent(uid);
+        }
+      }
+    }
+  }
+
+  for (let [id, component] of app("repository").components) {
+    if (component.markup().length === 0) {
+      component.unmount();
+      app("repository").removeComponent(id);
+    }
+  }
+});
+
+observer.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+});

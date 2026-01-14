@@ -25,28 +25,19 @@ export default class Component {
 
   constructor(name = null) {
     /**
+     * Component ID
+     */
+    this.id = Component.uid++;
+
+    /**
      * List of events that the component emits
      */
     this.EVENTS = {
       rendered: "rendered", // component is visible on the dom
       rerendered: "rerendered", // component was rerendered
-      premount: "premount", // component is ready to register
       mounted: "mounted", // the component is now registered
-      prebind: "prebind", // the component is ready to bind
-      bound: "bound", // the component has bound
-      markupBound: "markup-bound", // a temporary markup has bound
-      beforeHidden: "before-hidden",
-      hidden: "hidden",
       unmounted: "unmounted", // removed from the markup engine memory
-      beforeVisible: "before-visible", // before the markup is made visible
-      visible: "visible", // the markup is now made visible
     };
-
-    /**
-     * List of all components that are listening to
-     * specific events
-     */
-    this.listening = {};
 
     /**
      * All the states that this component is listening to
@@ -55,20 +46,9 @@ export default class Component {
     this.states = {};
 
     /**
-     * List of components that this component is listening
-     * to.
-     */
-    this.listeningTo = {};
-
-    /**
      * Has the component being mounted
      */
     this.mounted = false;
-
-    /**
-     * Has the component bound
-     */
-    this.bound = false;
 
     /**
      * Has the component rendered
@@ -106,31 +86,23 @@ export default class Component {
     this.name = name ?? this.constructor.name;
 
     this.emitter.once(this.EVENTS.rendered, (th) => (th.rendered = true));
-    this.on(this.EVENTS.hidden, (th) => (th.visible = false));
     this.on(this.EVENTS.rerendered, (th) => (th.rerendered = true));
-    this.on(this.EVENTS.bound, (th) => (th.bound = true));
     this.on(this.EVENTS.mounted, (th) => (th.mounted = true));
-    this.on(this.EVENTS.visible, (th) => (th.visible = true));
-
-    this.$$ojs = {
-      routeChanged: () => {
-        setTimeout(() => {
-          if (this.markup().length == 0) {
-            const h = container.resolve("h");
-            if (this.isAnonymous) {
-              return h.deleteComponent(this.name);
-            }
-
-            this.releaseMemory();
-          }
-        }, 1000);
-      },
-    };
 
     /**
      * Compare two Nodes
      */
     this.Reconciler = DOMReconciler;
+    container.resolve("repository").addComponent(this);
+  }
+
+  /**
+   * Find a component by its UID
+   * @param {int|string} id
+   * @returns {Component|null}
+   */
+  static findComponent(id) {
+    return container.resolve("repository").findComponent(id);
   }
 
   /**
@@ -151,138 +123,21 @@ export default class Component {
       args = [args];
     }
     const h = container.resolve("h");
-    return h.func([this, name], ...args);
+    return h.func({ componentId: this.id, methodName: name }, ...args);
   }
-
-  /**
-   * Get an external Component's method
-   * to add it to a DOM Element
-   * @param {string} componentMethod `Component.method` e.g. 'MainNav.notify'
-   * @param {[*]} args
-   */
-  xMethod(componentMethod, args) {
-    let splitted = componentMethod
-      .trim()
-      .split(/\./)
-      .map((a) => a.trim());
-
-    if (splitted.length < 2) {
-      console.error(
-        `${componentMethod} has syntax error. Please use ComponentName.methodName`
-      );
-    }
-
-    const h = container.resolve("h");
-    let cls = h.getComponent(splitted[0]);
-
-    if (!cls) {
-      console.error(`Component ${splitted[0]} not found`);
-      return;
-    }
-
-    let obj = new cls();
-
-    if (!obj.method) {
-      console.error(`Method ${splitted[1]} not found in ${splitted[0]}`);
-      return;
-    }
-
-    return obj.method(splitted[1], args);
-  }
-
-  /**
-   * Adds a Listening component
-   * @param {event} event
-   * @param {Component} component
-   */
-  addListeningComponent(component, event) {
-    if (this.emitsTo(component, event)) return;
-
-    if (!this.listening[event]) this.listening[event] = new Map();
-    this.listening[event].set(component.name, component);
-
-    component.addEmittingComponent(this, event);
-  }
-
-  /**
-   * Adds a component that this component is listening to
-   * @param {string} event
-   * @param {Component} component
-   */
-  addEmittingComponent(component, event) {
-    if (this.listensTo(component, event)) return;
-
-    if (!this.listeningTo[component.name])
-      this.listeningTo[component.name] = new Map();
-
-    this.listeningTo[component.name].set(event, component);
-
-    component.addListeningComponent(this, event);
-  }
-
-  /**
-   * Checks if this component is listening
-   * @param {string} event
-   * @param {Component} component
-   */
-  emitsTo(component, event) {
-    return this.listening[event]?.has(component.name) ?? false;
-  }
-
-  /**
-   * Checks if this component is listening to the other
-   * component
-   * @param {*} event
-   * @param {*} component
-   */
-  listensTo(component, event) {
-    return this.listeningTo[component.name]?.has(event) ?? false;
-  }
-
-  /**
-   * Deletes a component from the listening array
-   * @param {string} event
-   * @param {Component} component
-   */
-  doNotListenTo(component, event) {
-    this.listeningTo[component.name]?.delete(event);
-
-    if (this.listeningTo[component.name]?.size == 0) {
-      delete this.listeningTo[component.name];
-    }
-
-    if (!component.emitsTo(this, event)) return;
-
-    component.doNotEmitTo(this, event);
-  }
-
-  /**
-   * Stops this component from emitting to the other component
-   * @param {string} event
-   * @param {Component} component
-   * @returns
-   */
-  doNotEmitTo(component, event) {
-    this.listening[event]?.delete(component.name);
-
-    if (!component.listensTo(this, event)) return;
-    component.doNotListenTo(this, event);
-  }
-
   /**
    * Get all Emitters declared in the component
    */
   getDeclaredListeners() {
     if (this.__ojsRegistered) {
       console.warn(
-        `Component "${this.name}" is already registered. Skipping duplicate registration.`
+        `Component "component:${this.id}" is already registered. Skipping duplicate registration.`
       );
       return;
     }
 
     let obj = this;
     let seen = new Set();
-    const h = container.resolve("h");
 
     do {
       if (!(obj instanceof Component)) break;
@@ -299,54 +154,13 @@ export default class Component {
 
         let events = meta[0].split(/_/g);
         events.shift();
-        let cmpName = this.name;
 
-        let subjects = meta.slice(1);
+        for (let j = 0; j < events.length; j++) {
+          let ev = events[j];
 
-        if (!subjects?.length) subjects = [this.name, "on"];
+          if (!ev.length) continue;
 
-        let methods = { on: true, onAll: true };
-
-        let stack = [];
-
-        for (let i = 0; i < subjects.length; i++) {
-          let current = subjects[i];
-          stack.push(current);
-
-          while (stack.length) {
-            i++;
-            current = subjects[i] ?? null;
-
-            if (current && methods[current]) {
-              stack.push(current);
-            } else {
-              stack.push("on");
-              i--;
-            }
-
-            let m = stack.pop();
-            let cmp = stack.pop();
-
-            for (let j = 0; j < events.length; j++) {
-              let ev = events[j];
- 
-              if (!ev.length) continue;
-
-              h[m](cmp, ev, (component, event, ...args) => {
-                try {
-                  h
-                    .getComponent(cmpName)
-                    [method]?.bind(h.getComponent(cmpName))(
-                    component,
-                    event,
-                    ...args
-                  );
-                } catch (e) {
-                  console.error(e);
-                }
-              });
-            }
-          }
+          this.on(ev, this[method]);
         }
 
         seen.add(method);
@@ -361,22 +175,10 @@ export default class Component {
    * Initializes the component and adds it to
    * the component map of the markup engine
    * @emits mounted
-   * @emits pre-mount
    */
-  async mount() {
-    // Prevent duplicate registration
-    if (this.__ojsRegistered) {
-      console.warn(
-        `Component "${this.name}" is already registered. Skipping duplicate registration.`
-      );
-      return;
-    }
-    const h = container.resolve("h");
-    h.component(this.name, this);
-
-    this.claimListeners();
-    this.emit(this.EVENTS.premount);
-    await this.bindComponent();
+  mount() {
+    if (this.mounted == true) return;
+    this.mounted = true;
     this.emit(this.EVENTS.mounted);
   }
 
@@ -391,44 +193,9 @@ export default class Component {
     }
 
     this.releaseMemory();
+    this.mounted = false;
 
     return true;
-  }
-
-  /**
-   * Checks if this component has
-   * elements on the dom and if they are
-   * visible
-   */
-  checkVisibility() {
-    const h = container.resolve("h");
-    let elem = h.dom.querySelector(`ojs-${this.kebab(this.name)}`);
-
-    if (elem && elem.parentElement?.style.display !== "none" && !this.visible) {
-      return this.show();
-    }
-
-    if (elem && elem.parentElement?.style.display === "none" && this.visible) {
-      return this.hide();
-    }
-
-    if (
-      elem &&
-      elem.style.display !== "none" &&
-      elem.style.visibility !== "hidden" &&
-      !this.visible
-    ) {
-      this.show();
-    }
-
-    if (
-      (!elem ||
-        elem.style.display === "none" ||
-        elem.style.visibility === "hidden") &&
-      this.visible
-    ) {
-      this.hide();
-    }
   }
 
   /**
@@ -438,39 +205,6 @@ export default class Component {
    */
   emit(event, args = []) {
     this.emitter.emit(event, this, event, ...args);
-  }
-
-  /**
-   * Binds this component to the elements on the dom.
-   * @emits pre-bind
-   * @emits markup-bound
-   * @emits bound
-   */
-  async bindComponent() {
-    this.emit(this.EVENTS.prebind);
-    const h = container.resolve("h");
-    let all = h.dom.querySelectorAll(`ojs-${this.kebab(this.name)}-tmp--`);
-
-    if (all.length == 0 && !this.bindCalled) {
-      this.bindCalled = true;
-      setTimeout(this.bindComponent.bind(this), 500);
-      return;
-    }
-
-    for (let elem of all) {
-      let hId = elem.getAttribute("ojs-key");
-
-      let args = [...h.compArgs.get(hId)];
-      h.compArgs.delete(hId);
-
-      this.wrap(...args, { parent: elem, replaceParent: true });
-
-      this.emit(this.EVENTS.markupBound, [elem, args]);
-    }
-
-    this.emit(this.EVENTS.bound);
-
-    return true;
   }
 
   /**
@@ -498,62 +232,9 @@ export default class Component {
     const h = container.resolve("h");
     if (!parent) parent = h.dom;
 
-    return parent.querySelectorAll(`ojs-${this.kebab(this.name)}`);
-  }
-
-  /**
-   * Hides all the markup of this component
-   * @emits before-hidden
-   * @emits hidden
-   * @returns {bool}
-   */
-  hide() {
-    this.emit(this.EVENTS.beforeHidden);
-
-    let all = this.markup();
-
-    for (let elem of all) {
-      elem.style.display = "none";
-    }
-
-    this.emit(this.EVENTS.hidden);
-
-    return true;
-  }
-
-  /**
-   * Remove style-display-none from all this component's markup
-   * @emits before-visible
-   * @emits visible
-   * @returns bool
-   */
-  show() {
-    this.emit(this.EVENTS.beforeVisible);
-
-    let all = this.markup();
-
-    for (let elem of all) {
-      elem.style.display = "";
-    }
-
-    this.emit(this.EVENTS.visible);
-
-    return true;
-  }
-
-  /**
-   * Ensure that the action will get called
-   * even if the event was emitted previously
-   * @param {string} event
-   * @param {...function} listeners
-   */
-  onAll(event, ...listeners) {
-    // check if we have previously emitted this event
-    listeners.forEach((a) => {
-      if (event in this.emitter.emitted) a(...this.emitter.emitted[event]);
-
-      this.emitter.on(event, a);
-    });
+    return parent.querySelectorAll(
+      `ojs-${this.kebab(this.name)}[uid="${this.id}"]`
+    );
   }
 
   /**
@@ -562,7 +243,6 @@ export default class Component {
    * @param {...function} listeners
    */
   on(event, ...listeners) {
-    // check if we have previously emitted this event
     listeners.forEach((a) => {
       if (Array.isArray(a)) {
         a.forEach((f) => this.emitter.on(event, f));
@@ -573,48 +253,26 @@ export default class Component {
     });
   }
 
-  /**
-   * Gets all the listeners for itself and adds them to itself
-   */
-  claimListeners() {
-    const h = container.resolve("h");
-    if (!h.eventsMap.has(this.name)) return;
-
-    let events = h.eventsMap.get(this.name);
-
-    for (let event in events) {
-      events[event].forEach((listener) => {
-        let func = listener.function;
-
-        if (listener.type === "all") this.onAll(event, func);
-        else this.on(event, func);
-      });
-    }
-
-    h.eventsMap.delete(this.name);
-  }
-
   releaseMemory() {
+    container.resolve("repository").removeComponent(this.id);
     this.cleanUp();
 
-    for (let event in this.listening) {
-      for (let [_name, component] of this.listening[event]) {
-        component.doNotListenTo(this, event);
-      }
-    }
+    this.emitter.clear();
+    this.argsMap.clear();
 
     for (let id in this.states) {
-      this.states[id]?.off(this.name);
+      this.states[id]?.off(`component-${this.id}`);
       delete this.states[id];
     }
 
-    this.argsMap = new Map();
-    this.listeningTo = {};
-    this.listening = {};
+    const broker = container.resolve("broker");
 
-    if (this.isAnonymous) {
-      this.emitter.listeners = {};
-      this.emitter.emitted = {};
+    for (let event in this.__brokerEvents__) {
+      for (let listener of this.__brokerEvents__[event]) {
+        broker.off(event, listener);
+      }
+
+      delete this.__brokerEvents__[event];
     }
   }
 
@@ -650,7 +308,7 @@ export default class Component {
           typeof args[i].$__name__ !== "undefined" &&
           args[i].$__name__ == "OpenScript.State")
       ) {
-        args[i].listener(this);
+        args[i].listener(`component-${this.id}`);
         this.states[args[i].$__id__] = args[i];
         final.states.push(args[i].$__id__);
       } else if (
@@ -695,7 +353,7 @@ export default class Component {
 
   /**
    * Wraps the rendered content
-   * @emits re-rendered
+   * @emits rerendered
    * @param  {...any} args
    * @returns
    */
@@ -707,29 +365,26 @@ export default class Component {
 
     // check if the render was called due to a state change
     if (lastArg && lastArg["called-by-state-change"]) {
-      let state = lastArg.self;
+      let stateId = lastArg.stateId;
 
       delete args[index];
 
       let current =
         h.dom.querySelectorAll(
-          `ojs-${this.kebab(this.name)}[s-${state.$__id__}="${state.$__id__}"]`
+          `ojs-${this.kebab(this.name)}[uid="${this.id}"][s-${stateId}="${
+            stateId
+          }"]`
         ) ?? [];
 
       let reconciler = new this.Reconciler();
 
       current.forEach((e) => {
-        if (!this.visible) e.style.display = "none";
-        else e.style.display = "";
+        let arg = this.argsMap.get(Number(e.getAttribute("uid")));
 
-        // e.textContent = "";
-
-        let arg = this.argsMap.get(e.getAttribute("uuid"));
         let attr = {
-          // parent: e,
-          component: this,
+          componentId: this.id,
           event: this.EVENTS.rerendered,
-          eventParams: [{ markup: e, component: this }],
+          eventParams: [{ componentId: this.id }],
         };
 
         let shouldReconcile = true;
@@ -764,19 +419,18 @@ export default class Component {
       if (!this.markup().length) this.argsMap.clear();
       else {
         let all = this.markup(parent);
-
-        all.forEach((elem) => this.argsMap.delete(elem.getAttribute("uuid")));
+        all.forEach((elem) => this.argsMap.delete(elem.getAttribute("uid")));
       }
 
       if (this.argsMap.size) event = this.EVENTS.rerendered;
     }
 
-    let uuid = `${Component.uid++}-${new Date().getTime()}`;
+    let uuid = this.id;
 
     this.argsMap.set(uuid, args ?? []);
 
     let attr = {
-      uuid,
+      uid: uuid,
       resetParent,
       replaceParent,
       firstOfParent,
@@ -808,9 +462,9 @@ export default class Component {
 
     attr = {
       ...attr,
-      component: this,
+      componentId: this.id,
       event,
-      eventParams: [{ markup, component: this }],
+      eventParams: [{ componentId: this.id }],
     };
 
     return h[`ojs-${this.kebab(this.name)}`](attr, markup, cAttributes);
@@ -847,11 +501,10 @@ export default class Component {
       }
     };
 
-    let c = new Cls();
-    c.getDeclaredListeners();
-    c.mount();
+    let h = container.resolve("h");
+    h.registerComponent(`anonym-${id}`, Cls);
 
-    return c.name;
+    return `anonym-${id}`;
   }
 
   /**

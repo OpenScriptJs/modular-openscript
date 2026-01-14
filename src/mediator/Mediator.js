@@ -5,6 +5,17 @@ import { container } from "../core/Container.js";
  * The Mediator Class
  */
 export default class Mediator {
+  static mediatorId = 0;
+
+  constructor() {
+    this.id = Mediator.mediatorId++;
+    container.resolve("repository").addMediator(this);
+  }
+
+  /**
+   * Should the mediator be registered
+   * @returns {boolean}
+   */
   shouldRegister() {
     return true;
   }

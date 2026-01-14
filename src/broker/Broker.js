@@ -1,4 +1,5 @@
 import Emitter from "../core/Emitter.js";
+import EventData from "../core/EventData.js";
 
 /**
  * The Broker Class
@@ -227,15 +228,10 @@ export default class Broker {
 
         this.#logs[event] = this.#logs[event] ?? [];
         this.#logs[event].push({ timestamp: currentTime(), args: args });
-
-        // Import EventData dynamically or assume it's available?
-        // In original code: args.push(new OpenScript.EventData().encode());
-        // I'll assume EventData is imported or I'll just skip this for now.
-        // Wait, I should import EventData.
         
-        // if (args.length == 0) {
-        // 	args.push(new OpenScript.EventData().encode());
-        // }
+        if (args.length == 0) {
+        	args.push((new EventData()).encode());
+        }
 
         args.push(event);
 
