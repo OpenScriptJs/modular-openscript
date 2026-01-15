@@ -242,6 +242,7 @@ addNecessaryGlobals();
 const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     for (const node of mutation.removedNodes) {
+      
       //iterate through all child nodes and remove modifications
       if (node.nodeType !== 1) continue;
 
@@ -287,3 +288,4 @@ observer.observe(document.documentElement, {
   childList: true,
   subtree: true,
 });
+

@@ -22,9 +22,8 @@ export function namespace(name) {
 }
 
 export function cleanUpNode(node) {
-  node.__eventListeners = null;
-  node.__methods = null;
   node.__openscript_cleanup__?.();
+  node.__eventListeners = null;
 }
 
 /**
@@ -46,7 +45,6 @@ export function indirectEventHandler(event) {
   }
 }
 
-
 export function defineDomMethod(node, name) {
   if (node[name]) return;
 
@@ -57,9 +55,43 @@ export function defineDomMethod(node, name) {
       const methods = container.resolve("repository").domMethods.get(this);
       const fn = methods?.get(name);
       return fn?.call(this, ...args);
-    }
+    },
   });
 }
 
+export function removeDomMethod(node, name) {
+  if (!node || !node[name]) return;
+  delete node[name];
+}
+
+export function destroyNodeDeep(node) {
+  if (node.nodeType !== 1) return;
+
+  for (const child of [...node.children]) {
+    destroyNodeDeep(child);
+  }
+
+  cleanUpNode(node);
+}
+
+export function cleanupDisconnectedComponents() {
+  const repo = container.resolve("repository");
+
+  for (const [id, component] of repo.components) {
+
+    if(!component?.mounted === true) continue;
+
+    let markups = component.markup();
+
+    if (!markups.length || markups[0]?.isConnected === false) {
+      component.unmount();
+      repo.removeComponent(id);
+    }
+  }
+}
+
+export function getOjsChildren(parent) {
+  return parent?.querySelectorAll(".__ojs-c-class__") ?? [];
+}
 
 

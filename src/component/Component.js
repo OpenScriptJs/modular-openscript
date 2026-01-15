@@ -3,6 +3,10 @@ import DOMReconciler from "./DOMReconciler.js";
 import BrokerRegistrar from "../broker/BrokerRegistrar.js";
 import State from "../core/State.js";
 import { container } from "../core/Container.js";
+import {
+  cleanupDisconnectedComponents,
+  getOjsChildren,
+} from "../utils/helpers.js";
 
 /**
  * Base Component Class
@@ -33,10 +37,10 @@ export default class Component {
      * List of events that the component emits
      */
     this.EVENTS = {
-      rendered: "rendered", // component is visible on the dom
-      rerendered: "rerendered", // component was rerendered
-      mounted: "mounted", // the component is now registered
-      unmounted: "unmounted", // removed from the markup engine memory
+      rendered: "rendered", // component ui is computed
+      rerendered: "rerendered", // component was ui was recomputed.
+      mounted: "mounted", // the component is now on the dom
+      unmounted: "unmounted", // removed from the repository
     };
 
     /**
@@ -51,6 +55,11 @@ export default class Component {
     this.mounted = false;
 
     /**
+     * Has the component being unmounted
+     */
+    this.unmounted = false;
+
+    /**
      * Has the component rendered
      */
     this.rendered = false;
@@ -59,11 +68,6 @@ export default class Component {
      * Has the component rerendered
      */
     this.rerendered = false;
-
-    /**
-     * Is the component visible
-     */
-    this.visible = true;
 
     /**
      * The argument Map for rerendering on state changes
@@ -85,9 +89,29 @@ export default class Component {
 
     this.name = name ?? this.constructor.name;
 
-    this.emitter.once(this.EVENTS.rendered, (th) => (th.rendered = true));
-    this.on(this.EVENTS.rerendered, (th) => (th.rerendered = true));
-    this.on(this.EVENTS.mounted, (th) => (th.mounted = true));
+    this.emitter.once(this.EVENTS.rendered, (componentId) => {
+      console.log("Component rendered:", componentId);
+      let repo = container.resolve("repository");
+      let component = repo.findComponent(componentId);
+      if (component) component.rendered = true;
+      console.log("Component rendered:", component);
+    });
+
+    this.on(this.EVENTS.rerendered, (componentId) => {
+      console.log("Component rerendered:", componentId);
+      let repo = container.resolve("repository");
+      let component = repo.findComponent(componentId);
+      if (component) component.rerendered = true;
+      console.log("Component rerendered:", component);
+    });
+
+    this.on(this.EVENTS.mounted, (componentId) => {
+      console.log("Component mounted:", componentId);
+      let repo = container.resolve("repository");
+      let component = repo.findComponent(componentId);
+      if (component) component.handleMounted();
+      console.log("Component mounted:", component);
+    });
 
     /**
      * Compare two Nodes
@@ -193,7 +217,7 @@ export default class Component {
     }
 
     this.releaseMemory();
-    this.mounted = false;
+    this.unmounted = true;
 
     return true;
   }
@@ -203,8 +227,10 @@ export default class Component {
    * @param {string} event
    * @param {Array<*>} args
    */
-  emit(event, args = []) {
-    this.emitter.emit(event, this, event, ...args);
+  emit(event, ...args) {
+    args.push(event);
+
+    this.emitter.emit(event, ...args);
   }
 
   /**
@@ -325,7 +351,12 @@ export default class Component {
           final.parent = args[i].parent;
         }
 
-        const keys = ["resetParent", "replaceParent", "firstOfParent"];
+        const keys = [
+          "resetParent",
+          "replaceParent",
+          "firstOfParent",
+          "reconcileParent",
+        ];
 
         for (let reserved of keys) {
           if (args[i][reserved]) {
@@ -360,8 +391,17 @@ export default class Component {
   wrap(...args) {
     const h = container.resolve("h");
     const lastArg = args[args.length - 1];
-    let { index, parent, resetParent, states, replaceParent, firstOfParent } =
-      this.getParentAndListen(args);
+    let {
+      index,
+      parent,
+      resetParent,
+      states,
+      replaceParent,
+      firstOfParent,
+      reconcileParent,
+    } = this.getParentAndListen(args);
+
+    let reconciler = new this.Reconciler();
 
     // check if the render was called due to a state change
     if (lastArg && lastArg["called-by-state-change"]) {
@@ -371,21 +411,15 @@ export default class Component {
 
       let current =
         h.dom.querySelectorAll(
-          `ojs-${this.kebab(this.name)}[uid="${this.id}"][s-${stateId}="${
-            stateId
-          }"]`
+          `ojs-${this.kebab(this.name)}[uid="${
+            this.id
+          }"][s-${stateId}="${stateId}"]`
         ) ?? [];
-
-      let reconciler = new this.Reconciler();
 
       current.forEach((e) => {
         let arg = this.argsMap.get(Number(e.getAttribute("uid")));
 
-        let attr = {
-          componentId: this.id,
-          event: this.EVENTS.rerendered,
-          eventParams: [{ componentId: this.id }],
-        };
+        let attr = {};
 
         let shouldReconcile = true;
 
@@ -405,8 +439,11 @@ export default class Component {
             reconciler.reconcile(markup, e.childNodes[0]);
           }
         }
+
+        this.emit(this.EVENTS.rerendered, this.id);
       });
 
+      queueMicrotask(cleanupDisconnectedComponents);
       return;
     }
 
@@ -437,7 +474,15 @@ export default class Component {
       class: "__ojs-c-class__",
     };
 
-    if (parent) attr.parent = parent;
+    // we render in the parent node
+    // if we don't need to reconcile the parent
+    if (parent) {
+      if (reconcileParent) {
+        attr.parent = parent.cloneNode();
+      } else {
+        attr.parent = parent;
+      }
+    }
 
     states.forEach((id) => {
       attr[`s-${id}`] = id;
@@ -451,8 +496,6 @@ export default class Component {
       return children.length > 1 ? children : children[0];
     }
 
-    if (!this.visible) attr.style = "display: none;";
-
     let cAttributes = {};
 
     if (markup instanceof HTMLElement) {
@@ -460,14 +503,25 @@ export default class Component {
       markup.setAttribute("c-attr", "");
     }
 
-    attr = {
-      ...attr,
-      componentId: this.id,
-      event,
-      eventParams: [{ componentId: this.id }],
-    };
+    const rendered = h[`ojs-${this.kebab(this.name)}`](
+      attr,
+      markup,
+      cAttributes
+    );
 
-    return h[`ojs-${this.kebab(this.name)}`](attr, markup, cAttributes);
+    if (reconcileParent && parent) {
+      reconciler.reconcile(rendered.parentElement, parent);
+    }
+
+    this.emit(this.EVENTS.rendered, this.id);
+
+    if (parent && parent.isConnected) {
+      this.emit(this.EVENTS.mounted, this.id);
+    }
+
+    queueMicrotask(cleanupDisconnectedComponents);
+
+    return rendered;
   }
 
   isHtml(markup) {
@@ -523,5 +577,29 @@ export default class Component {
    */
   removeListener(eventName, listener) {
     return this.emitter.removeListener(eventName, listener);
+  }
+
+  handleMounted() {
+    if (this.mounted) return;
+
+    this.mounted = true;
+
+    // get all components under this component and
+    // fire their mounted event.
+
+    let markups = this.markup();
+
+    let root = markups[0];
+
+    if (!root) return;
+
+    let children = getOjsChildren(root);
+
+    children.forEach((child) => {
+      let component = container
+        .resolve("repository")
+        .findComponent(child.getAttribute("uid"));
+      if (component) component.emit(this.EVENTS.mounted, component.id);
+    });
   }
 }

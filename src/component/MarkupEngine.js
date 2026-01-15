@@ -3,7 +3,7 @@ import Utils from "../utils/Utils.js";
 import Component from "./Component.js";
 import State from "../core/State.js";
 import { container } from "../core/Container.js";
-import { indirectEventHandler, isClass } from "../utils/helpers.js";
+import { defineDomMethod, indirectEventHandler, isClass } from "../utils/helpers.js";
 
 /**
  * Base Markup Engine Class
@@ -105,11 +105,9 @@ export default class MarkupEngine {
       // remove the listener from the event map in the repository
       // since for each event, there is only the indirect event handler
       // listening to that event.
-      let eventMap = container.resolve("repository").domListeners.get(this);
+      let eventMap = container.resolve("repository").domListeners.get(this) ?? new Map();
 
-      let listeners = eventMap.get(event);
-
-      if (!listeners) return;
+      let listeners = eventMap.get(event) ?? new Set();
 
       for (let l of listeners) {
         if (l === listener) {
@@ -121,11 +119,12 @@ export default class MarkupEngine {
       if (listeners.size === 0) {
         eventMap.delete(event);
         this.__eventListeners.delete(event);
+        this.removeEventListener(event, indirectEventHandler);
       }
     };
 
     element.getEventListeners = function () {
-      return container.resolve("repository").domListeners.get(this);
+      return container.resolve("repository").domListeners.get(this) ?? new Map();
     };
 
     element.toString = function () {
@@ -136,7 +135,7 @@ export default class MarkupEngine {
       let methods = {};
 
       // get the methods from the repository
-      let methodsMap = container.resolve("repository").domMethods.get(this);
+      let methodsMap = container.resolve("repository").domMethods.get(this) ?? new Map();
 
       for (let [k, v] of methodsMap) {
         methods[k] = v;
@@ -145,9 +144,18 @@ export default class MarkupEngine {
       return methods;
     };
 
+    element.removeAllListeners = function () {
+      this.__eventListeners?.forEach((event) => {
+        this.removeEventListener(event, indirectEventHandler);
+      });
+      this.__eventListeners?.clear();
+    };
+
     element.__openscript_cleanup__ = () => {
+      element.removeAllListeners();
       delete element.addListener;
       delete element.removeListener;
+      delete element.removeAllListeners;
       delete element.getEventListeners;
       delete element.methods;
       delete element.__eventListeners;
@@ -205,13 +213,6 @@ export default class MarkupEngine {
       return cmp.wrap(...args);
     }
 
-    let component;
-    let event = "";
-    let eventParams = [];
-
-    const isComponentName = (tag) => {
-      return /^ojs-.*$/.test(tag);
-    };
 
     /**
      * @type {DocumentFragment|HTMLElement}
@@ -261,27 +262,8 @@ export default class MarkupEngine {
           continue;
         }
 
-        if (k === "event" && typeof v === "string") {
-          event = v;
-          continue;
-        }
-
         if (k === "replaceParent" && typeof v === "boolean") {
           replaceParent = v;
-          continue;
-        }
-
-        if (k === "eventParams") {
-          if (!Array.isArray(v)) v = [v];
-          eventParams = v;
-          continue;
-        }
-
-        if (
-          k === "componentId" &&
-          (typeof v === "string" || typeof v === "number")
-        ) {
-          component = Component.findComponent(v);
           continue;
         }
 
@@ -449,24 +431,6 @@ export default class MarkupEngine {
       }
     }
 
-    if (component) {
-      component.emit(event, eventParams);
-      let sc = root.querySelectorAll(".__ojs-c-class__");
-
-      sc.forEach((c) => {
-        if (!isComponentName(c.tagName.toLowerCase())) return;
-        let cmp = Component.findComponent(Number(c.getAttribute("uid")));
-
-        if (!cmp) return;
-
-        cmp?.emit(event, eventParams);
-
-        if (parent.isConnected) {
-          cmp.mount();
-        }
-      });
-    }
-
     return root;
   };
 
@@ -567,8 +531,8 @@ export default class MarkupEngine {
       container.resolve("repository").domListeners.set(node, eventMap);
     }
 
-    let listeners = eventMap.get(event) ?? [];
-    listeners.push(listener);
+    let listeners = eventMap.get(event) ?? new Set();
+    listeners.add(listener);
     eventMap.set(event, listeners);
   };
 }
