@@ -90,27 +90,21 @@ export default class Component {
     this.name = name ?? this.constructor.name;
 
     this.emitter.once(this.EVENTS.rendered, (componentId) => {
-      console.log("Component rendered:", componentId);
       let repo = container.resolve("repository");
       let component = repo.findComponent(componentId);
       if (component) component.rendered = true;
-      console.log("Component rendered:", component);
     });
 
     this.on(this.EVENTS.rerendered, (componentId) => {
-      console.log("Component rerendered:", componentId);
       let repo = container.resolve("repository");
       let component = repo.findComponent(componentId);
       if (component) component.rerendered = true;
-      console.log("Component rerendered:", component);
     });
 
     this.on(this.EVENTS.mounted, (componentId) => {
-      console.log("Component mounted:", componentId);
       let repo = container.resolve("repository");
       let component = repo.findComponent(componentId);
       if (component) component.handleMounted();
-      console.log("Component mounted:", component);
     });
 
     /**
@@ -447,8 +441,6 @@ export default class Component {
       return;
     }
 
-    let event = this.EVENTS.rendered;
-
     if (
       parent &&
       (this.getValue(resetParent) || this.getValue(replaceParent))
@@ -458,13 +450,11 @@ export default class Component {
         let all = this.markup(parent);
         all.forEach((elem) => this.argsMap.delete(elem.getAttribute("uid")));
       }
-
-      if (this.argsMap.size) event = this.EVENTS.rerendered;
     }
 
     let uuid = this.id;
 
-    this.argsMap.set(uuid, args ?? []);
+    if(states?.length) this.argsMap.set(uuid, args ?? []);
 
     let attr = {
       uid: uuid,
