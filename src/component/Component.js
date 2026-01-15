@@ -70,11 +70,6 @@ export default class Component {
     this.rerendered = false;
 
     /**
-     * The argument Map for rerendering on state changes
-     */
-    this.argsMap = new Map();
-
-    /**
      * Event Emitter for the component
      */
     this.emitter = new Emitter();
@@ -112,6 +107,7 @@ export default class Component {
      */
     this.Reconciler = DOMReconciler;
     container.resolve("repository").addComponent(this);
+    container.resolve("repository").addComponentArgs(this.id, []);
   }
 
   /**
@@ -275,10 +271,10 @@ export default class Component {
 
   releaseMemory() {
     container.resolve("repository").removeComponent(this.id);
+    container.resolve("repository").removeComponentArgs(this.id);
     this.cleanUp();
 
     this.emitter.clear();
-    this.argsMap.clear();
 
     for (let id in this.states) {
       this.states[id]?.off(`component-${this.id}`);
@@ -411,7 +407,8 @@ export default class Component {
         ) ?? [];
 
       current.forEach((e) => {
-        let arg = this.argsMap.get(Number(e.getAttribute("uid")));
+        let arg =
+          container.resolve("repository").getComponentArgs(this.id) ?? [];
 
         let attr = {};
 
@@ -445,16 +442,14 @@ export default class Component {
       parent &&
       (this.getValue(resetParent) || this.getValue(replaceParent))
     ) {
-      if (!this.markup().length) this.argsMap.clear();
-      else {
-        let all = this.markup(parent);
-        all.forEach((elem) => this.argsMap.delete(elem.getAttribute("uid")));
-      }
+      container.resolve("repository").addComponentArgs(this.id, []);
     }
 
     let uuid = this.id;
 
-    if(states?.length) this.argsMap.set(uuid, args ?? []);
+    if (states?.length) {
+      container.resolve("repository").addComponentArgs(this.id, args ?? []);
+    }
 
     let attr = {
       uid: uuid,

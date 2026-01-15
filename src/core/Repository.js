@@ -17,6 +17,12 @@ export default class Repository {
     this.components = new Map();
 
     /**
+     * Keeps arguments that was passed to the component 
+     * during rendering when a state was passed.
+     */
+    this.componentArgsMap = new WeakMap();
+
+    /**
      * Map of State references.
      * @type {Map<string|number, State>}
      */
@@ -112,10 +118,42 @@ export default class Repository {
   }
 
   /**
+   * Add arguments to the component
+   * @param {string|number} componentId
+   * @param {Array<*>} args
+   */
+  addComponentArgs(componentId, args) {
+    let component = this.findComponent(componentId);
+    if (!component) return; 
+    this.componentArgsMap.set(component, args);
+  }
+
+  /**
    * Remove a mediator from the repository
    * @param {string} id
    */
   removeMediator(id) {
     this.mediators.delete(Number(id));
+  }
+
+  /**
+   * Get the arguments passed to the component
+   * @param {string|number} componentId
+   * @returns {Array<*>}
+   */
+  getComponentArgs(componentId) {
+    let component = this.findComponent(componentId);
+    if (!component) return;
+    return this.componentArgsMap.get(component);
+  }
+
+  /**
+   * Remove arguments from the component
+   * @param {string|number} componentId
+   */
+  removeComponentArgs(componentId) {
+    let component = this.findComponent(componentId);
+    if (!component) return;
+    this.componentArgsMap.delete(component);
   }
 }
