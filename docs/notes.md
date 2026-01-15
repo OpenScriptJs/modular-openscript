@@ -1,0 +1,1 @@
+- Putting a stage on the root component of the app can result in a memory leak that keeps at least double of the dom nodes currently rendered. It's best to have a second level component on which the states can are passed if at all there must be global states. 

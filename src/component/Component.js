@@ -522,7 +522,7 @@ export default class Component {
     let Cls = class extends Component {
       constructor() {
         super();
-        this.name = `anonym-${id}`;
+        this.name = `anonym${id}`;
         this.isAnonymous = true;
       }
 

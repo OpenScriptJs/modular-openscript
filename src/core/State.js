@@ -57,7 +57,11 @@ export default class State {
     ) {
       if (typeof listener === "string") {
         let uid = listener.split("-")[1];
-        listener = container.resolve("repository").findComponent(Number(uid));
+        listener = container.resolve("repository").findComponent(uid);
+
+        if (!listener) {
+          return null;
+        }
       }
 
       this.$__listeners__.set(`component-${listener.id}`, listener);

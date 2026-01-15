@@ -35,29 +35,40 @@ export default class Runner {
       let c = cls[i];
       let instance;
       const classKey = this.getClassKey(c);
+      const instanceName = c.name;
 
       if (!this.isClass(c)) {
-        instance = new Component(c.name);
-      } else {
-        if (registrations[classKey] === "ongoing") {
+        let functionClass = class extends Component {
+          constructor() {
+            super();
+
+            this.name = instanceName;
+          }
+        };
+
+        functionClass.prototype.render = c;
+
+        c = functionClass;
+      }
+
+      if (registrations[classKey] === "ongoing") {
+        continue;
+      }
+
+      if (container.has(classKey)) {
+        instance = container.resolve(classKey);
+        if (instance.__ojsRegistered) {
           continue;
         }
-
-        if (container.has(classKey)) {
-          instance = container.resolve(classKey);
-          if (instance.__ojsRegistered) {
-            continue;
-          }
-        } else {
-          instance = new c();
-          container.singleton(classKey, () => instance, []);
-          registrations[classKey] = "ongoing";
-        }
+      } else {
+        instance = new c();
+        container.singleton(classKey, () => instance, []);
+        registrations[classKey] = "ongoing";
       }
 
       if (instance instanceof Component) {
         registrations[classKey] = "completed";
-        h.registerComponent(c.name, c);
+        h.registerComponent(instanceName, c);
       } else if (instance instanceof Mediator || instance instanceof Listener) {
         await instance.register();
         registrations[classKey] = "completed";
