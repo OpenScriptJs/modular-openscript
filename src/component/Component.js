@@ -5,8 +5,10 @@ import State from "../core/State.js";
 import { container } from "../core/Container.js";
 import {
   cleanupDisconnectedComponents,
+  destroyNodeDeep,
   getOjsChildren,
 } from "../utils/helpers.js";
+import DOM from "../utils/DOM.js";
 
 /**
  * Base Component Class
@@ -145,7 +147,7 @@ export default class Component {
   getDeclaredListeners() {
     if (this.__ojsRegistered) {
       console.warn(
-        `Component "component:${this.id}" is already registered. Skipping duplicate registration.`
+        `Component "component:${this.id}" is already registered. Skipping duplicate registration.`,
       );
       return;
     }
@@ -200,12 +202,22 @@ export default class Component {
    * Deletes all the component's markup from the DOM
    */
   unmount() {
+    
+    /**
+     * Clean up the dom based on the developer's logic.
+     */
+    this.cleanUp();
+
+    /**
+     * @var {NodeList<HTMLElement>} all
+     */
     let all = this.markup();
 
     for (let elem of all) {
+      destroyNodeDeep(elem);
       elem.remove();
     }
-
+    
     this.releaseMemory();
     this.unmounted = true;
 
@@ -249,7 +261,7 @@ export default class Component {
     if (!parent) parent = h.dom;
 
     return parent.querySelectorAll(
-      `ojs-${this.kebab(this.name)}[uid="${this.id}"]`
+      `ojs-${this.kebab(this.name)}[uid="${this.id}"]`,
     );
   }
 
@@ -272,7 +284,6 @@ export default class Component {
   releaseMemory() {
     container.resolve("repository").removeComponent(this.id);
     container.resolve("repository").removeComponentArgs(this.id);
-    this.cleanUp();
 
     this.emitter.clear();
 
@@ -403,7 +414,7 @@ export default class Component {
         h.dom.querySelectorAll(
           `ojs-${this.kebab(this.name)}[uid="${
             this.id
-          }"][s-${stateId}="${stateId}"]`
+          }"][s-${stateId}="${stateId}"]`,
         ) ?? [];
 
       current.forEach((e) => {
@@ -491,7 +502,7 @@ export default class Component {
     const rendered = h[`ojs-${this.kebab(this.name)}`](
       attr,
       markup,
-      cAttributes
+      cAttributes,
     );
 
     if (reconcileParent && parent) {
