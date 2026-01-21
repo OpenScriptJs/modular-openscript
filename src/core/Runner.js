@@ -68,7 +68,7 @@ export default class Runner {
 
       if (instance instanceof Component) {
         registrations[classKey] = "completed";
-        h.registerComponent(instanceName, c);
+        h.registerComponent(instance.name, c);
       } else if (instance instanceof Mediator || instance instanceof Listener) {
         await instance.register();
         registrations[classKey] = "completed";

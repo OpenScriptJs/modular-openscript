@@ -8,16 +8,10 @@ import MagicString from "magic-string";
  * Automatically discovers components and provides IDE autocomplete + bundling
  */
 export function openScriptComponentPlugin(options = {}) {
-  const {
-    componentsDir = "src/components",
-    autoRegister = true,
-    generateTypes = true,
-  } = options;
+  const { componentsDir = "src/components", generateTypes = true } = options;
 
   let config;
   let components = [];
-  const virtualModuleId = "virtual:openscript-components";
-  const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
   return {
     name: "openscript-component-plugin",
@@ -32,7 +26,7 @@ export function openScriptComponentPlugin(options = {}) {
 
       if (!fs.existsSync(componentsPath)) {
         console.warn(
-          `[OpenScript] Components directory not found: ${componentsPath}`
+          `[OpenScript] Components directory not found: ${componentsPath}`,
         );
         return;
       }
@@ -42,7 +36,7 @@ export function openScriptComponentPlugin(options = {}) {
 
       console.log(
         `[OpenScript] Found ${components.length} components:`,
-        components.map((c) => c.name).join(", ")
+        components.map((c) => c.name).join(", "),
       );
 
       // Generate TypeScript definitions if enabled
@@ -51,81 +45,183 @@ export function openScriptComponentPlugin(options = {}) {
       }
     },
 
-    resolveId(id) {
-      if (id === virtualModuleId) {
-        return resolvedVirtualModuleId;
-      }
-    },
-
-    load(id) {
-      if (id === resolvedVirtualModuleId) {
-        // Generate virtual module that imports all components
-        return generateVirtualModule(
-          config.root,
-          componentsDir,
-          components,
-          autoRegister
-        );
-      }
-    },
-
     transform(code, id) {
+      // Normalize path for Windows compatibility
+      const normalizedId = normalizePath(id);
+
       // Only transform files in components directory
-      if (!id.includes(componentsDir) || !id.endsWith(".js")) return;
-
-      // Find class definition
-      const classMatch = code.match(/class\s+(\w+)\s+extends\s+Component/);
-      if (!classMatch) return;
-
-      const className = classMatch[1];
-
-      // If code already sets this.name explicitly, skip (simple check)
-      if (code.includes(`this.name = "${className}"`)) return;
+      if (
+        !normalizedId.includes(componentsDir) ||
+        !normalizedId.endsWith(".js")
+      )
+        return;
 
       const s = new MagicString(code);
+      let hasChanged = false;
 
-      if (code.includes("constructor")) {
-        // Inject after super()
-        const superMatch = code.match(/(super\s*\([^)]*\)\s*;?)/);
-        if (superMatch) {
-          const index = superMatch.index + superMatch[0].length;
-          s.appendRight(
-            index,
-            `\n    if (!this.name) this.name = "${className}";`
-          );
+      // 1. Check for Functional Components: function MyComp(...) { ... }
+      // Regex matches: 1=export_modifier, 2=Name, 3=Args
+      const funcRegex =
+        /(export\s+default\s+|export\s+)?function\s+([A-Z]\w*)\s*\(([^)]*)\)\s*\{/g;
+      let match;
+
+      // We need to handle multiple components in one file, though rare for default exports
+      // But let's loop to be safe and use a while loop with exec
+      while ((match = funcRegex.exec(code)) !== null) {
+        const [fullMatch, exportModifier = "", name, args] = match;
+        const start = match.index;
+        const bodyStart = start + fullMatch.length - 1; // pointing to {
+
+        // Find closing brace
+        let braceCount = 1;
+        let end = -1;
+        let i = bodyStart + 1;
+
+        while (i < code.length) {
+          if (code[i] === "{") braceCount++;
+          else if (code[i] === "}") braceCount--;
+
+          if (braceCount === 0) {
+            end = i;
+            break;
+          }
+          i++;
         }
-      } else {
-        // No constructor, inject one
-        const classDef = classMatch[0];
-        const openBraceIndex = code.indexOf("{", code.indexOf(classDef));
 
-        if (openBraceIndex !== -1) {
-          s.appendRight(
-            openBraceIndex + 1,
-            `\n  constructor() { super(); this.name = "${className}"; }`
-          );
+        if (end !== -1) {
+          // Found the component body
+          hasChanged = true;
+
+          // Replace header
+          // "export default function Name(args) {"
+          // ->
+          // "export default class Name extends Component { constructor() { super(); this.name = "Name"; } render(args) {"
+          const replacement = `${exportModifier}class ${name} extends Component {
+  constructor() {
+    super();
+    this.name = "${name}";
+  }
+
+  render(${args}) {`;
+
+          s.overwrite(start, bodyStart + 1, replacement);
+
+          // Append closing brace for the class
+          s.appendRight(end + 1, "\n}");
         }
       }
 
-      if (s.hasChanged()) {
+      // 2. Existing logic: Class Component name injection
+      // Only run this if we haven't just converted it (though regex below checks for class)
+      // If we converted, we already injected the name.
+      // But there might be other classes in the file.
+
+      // Note: If we just converted, s.toString() inside loop?
+      // MagicString handles edits on original string.
+      // But our regex 'code.match' works on original code.
+      // If we have mixed content, we should be careful.
+      // The original logic scanned for "class ... extends Component".
+      // Our new logic creates that string in output, but original code didn't have it.
+      // So checks against 'code' for class will only find ORIGINAL classes.
+
+      const classRegex = /class\s+(\w+)\s+extends\s+Component/g;
+      while ((match = classRegex.exec(code)) !== null) {
+        const className = match[1];
+
+        // Check if this class already has name set in ORIGINAL code
+        // (If we synthesized it, we don't need to do this, and regex won't find synthesized one)
+        const classStart = match.index;
+        // Simple check range for existing name assignment is hard with regex loop
+        // But we can check globally if the code has it for this class
+        if (code.includes(`this.name = "${className}"`)) continue;
+
+        // Find constructor or inject it
+        // We need to look inside the class body.
+        // Find the opening brace for this class
+        const openBraceIndex = code.indexOf("{", classStart);
+        if (openBraceIndex === -1) continue;
+
+        // Check if constructor exists within reasonable distance/scope?
+        // This is tricky with simple string searching on the whole file.
+        // But let's assume standard structure or rely on previous logic's robustness
+        // The previous logic used 'if (code.includes("constructor"))' which is global!
+        // That was capable of false positives if multiple classes existed or comments.
+        // But let's stick to the previous logic style for consistency but apply it carefully.
+
+        // Actually, since I'm rewriting the transform function, I can try to improve it slightly
+        // or just keep it as is for existing classes.
+
+        // Given constraints, I will preserve the logic's INTENT:
+        // Ensure `this.name` is set.
+
+        // For the *functional* transformation I just added, I *know* I added the constructor.
+        // So I don't need to process those.
+        // So I only process matches from `classRegex` on the `code` string.
+        // Since `code` is original source, it won't include my functional-to-class transforms.
+        // So I am only processing originally-written classes. Perfect.
+
+        // Re-implementing existing logic for original classes:
+
+        // Try to find constructor in the class body?
+        // We'll search for `constructor` keyword after class def.
+        const nextClassIndex = code.indexOf("class ", openBraceIndex);
+        const searchEnd = nextClassIndex === -1 ? code.length : nextClassIndex;
+        const constructorMatch = code
+          .substring(openBraceIndex, searchEnd)
+          .match(/constructor\s*\(/);
+
+        if (constructorMatch) {
+          // Constructor exists
+          // Find super() call relative to class start
+          const constructorAbsIndex = openBraceIndex + constructorMatch.index;
+          // Search for super() after constructor
+          const superMatch = code
+            .substring(constructorAbsIndex, searchEnd)
+            .match(/super\s*\([^)]*\)\s*;?/);
+          if (superMatch) {
+            const insertAt =
+              constructorAbsIndex + superMatch.index + superMatch[0].length;
+            s.appendRight(
+              insertAt,
+              `\n    if (!this.name) this.name = "${className}";`,
+            );
+            hasChanged = true;
+          }
+        } else {
+          // No constructor, inject one at start of class
+          s.appendRight(
+            openBraceIndex + 1,
+            `\n  constructor() { super(); this.name = "${className}"; }`,
+          );
+          hasChanged = true;
+        }
+      }
+
+      // 3. Inject Component import if needed
+      // If we did any transformation (functional or existing class), we might need Component.
+      // Especially for functional -> class.
+      if (hasChanged) {
+        // Check if Component is imported
+        // Matches: import { Component } ... or import ... Component ...
+        // Simple check:
+        if (!code.includes("import") || !code.match(/import\s+.*Component/)) {
+          // Need to import Component.
+          // Check if existing import from "modular-openscriptjs" exists
+          if (code.includes("modular-openscriptjs")) {
+            // Try to add to existing import? Hard with regex.
+            // Easier to just add a new line.
+            s.prepend(`import { Component } from "modular-openscriptjs";\n`);
+          } else {
+            s.prepend(`import { Component } from "modular-openscriptjs";\n`);
+          }
+        }
+      }
+
+      if (hasChanged) {
         return {
           code: s.toString(),
           map: s.generateMap({ source: id, includeContent: true }),
         };
-      }
-    },
-
-    // HMR support
-    handleHotUpdate({ file, server }) {
-      if (file.includes(componentsDir)) {
-        // Reload virtual module when components change
-        const module = server.moduleGraph.getModuleById(
-          resolvedVirtualModuleId
-        );
-        if (module) {
-          server.moduleGraph.invalidateModule(module);
-          return [module];
-        }
       }
     },
   };
@@ -216,46 +312,4 @@ export {};
 
   fs.writeFileSync(dtsPath, content, "utf-8");
   console.log(`[OpenScript] Generated type definitions: ${dtsPath}`);
-}
-
-/**
- * Generate virtual module content that imports and registers all components
- */
-function generateVirtualModule(root, componentsDir, components, autoRegister) {
-  const imports = components
-    .map((c) => {
-      const absolutePath = normalizePath(
-        path.resolve(root, componentsDir, c.path)
-      );
-      return `import ${c.name} from '${absolutePath}';`;
-    })
-    .join("\n");
-
-  const exports = components.map((c) => c.name).join(", ");
-
-  const registration = autoRegister
-    ? `
-// Auto-register all components
-const components = { ${exports} };
-
-export async function registerAllComponents() {
-  for (const [name, Component] of Object.entries(components)) {
-    const instance = new Component();
-    await instance.mount();
-  }
-}
-`
-    : "";
-
-  return `// Auto-generated by OpenScript Component Plugin
-${imports}
-
-${registration}
-
-// Export all components for manual use
-export { ${exports} };
-
-// Export component registry
-export default { ${exports} };
-`;
 }

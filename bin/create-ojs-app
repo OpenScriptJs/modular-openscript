@@ -85,7 +85,7 @@ async function createProject(projectName, template = "basic") {
       preview: "vite preview",
     },
     dependencies: {
-      "modular-openscriptjs": "^1.0.0",
+      "modular-openscriptjs": "latest",
     },
     devDependencies: {
       vite: "^5.0.7",

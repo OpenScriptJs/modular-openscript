@@ -84,7 +84,6 @@ export default class Component {
 
     this.isAnonymous = false;
 
-    this.name = name ?? this.constructor.name;
 
     this.emitter.once(this.EVENTS.rendered, (componentId) => {
       let repo = container.resolve("repository");
