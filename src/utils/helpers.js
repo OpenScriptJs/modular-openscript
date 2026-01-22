@@ -78,8 +78,7 @@ export function cleanupDisconnectedComponents() {
   const repo = container.resolve("repository");
 
   for (const [id, component] of repo.components) {
-
-    if(!component?.mounted === true) continue;
+    if (!component?.mounted === true) continue;
 
     let markups = component.markup();
 
@@ -94,4 +93,15 @@ export function getOjsChildren(parent) {
   return parent?.querySelectorAll(".__ojs-c-class__") ?? [];
 }
 
+export function registerDomListeners(node, event, listener) {
+  let eventMap = container.resolve("repository").domListeners.get(node);
 
+  if (!eventMap) {
+    eventMap = new Map();
+    container.resolve("repository").domListeners.set(node, eventMap);
+  }
+
+  let listeners = eventMap.get(event) ?? new Set();
+  listeners.add(listener);
+  eventMap.set(event, listeners);
+}

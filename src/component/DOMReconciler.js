@@ -1,5 +1,10 @@
 import { container } from "../core/Container";
-import { destroyNodeDeep, removeDomMethod } from "../utils/helpers";
+import {
+  destroyNodeDeep,
+  indirectEventHandler,
+  registerDomListeners,
+  removeDomMethod,
+} from "../utils/helpers";
 
 /**
  * DOMReconciler Class
@@ -92,20 +97,20 @@ export default class DOMReconciler {
   }
 
   replaceEventListeners(targetNode, sourceNode) {
-    const events = this.getEventListeners(targetNode);
-
-    for (const [eventName, listeners] of events) {
-      listeners.forEach((listener) => {
-        targetNode.removeListener(eventName, listener);
-      });
+    if (targetNode.removeAllListeners) {
+      targetNode.removeAllListeners();
     }
 
     const sourceEvents = this.getEventListeners(sourceNode);
 
     for (const [eventName, listeners] of sourceEvents) {
       listeners.forEach((listener) => {
-        targetNode.addListener(eventName, listener);
+        registerDomListeners(targetNode, eventName, listener);
       });
+
+      if (targetNode.addListener) {
+        targetNode.addListener(eventName, indirectEventHandler);
+      }
     }
   }
 
@@ -121,6 +126,9 @@ export default class DOMReconciler {
       targetMethods = new Map();
       container.resolve("repository").domMethods.set(targetNode, targetMethods);
     }
+
+    // remove all previous methods
+    container.resolve("repository").domMethods.get(targetNode)?.clear();
 
     for (const [name, fn] of methodsMap) {
       removeDomMethod(targetNode, name);

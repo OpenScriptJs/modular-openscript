@@ -219,6 +219,7 @@ export default class Component {
     
     this.releaseMemory();
     this.unmounted = true;
+    this.emit(this.EVENTS.unmounted);
 
     return true;
   }
@@ -510,7 +511,7 @@ export default class Component {
 
     this.emit(this.EVENTS.rendered, this.id);
 
-    if (parent && parent.isConnected) {
+    if (parent && parent.isConnected && this.mounted == false) {
       this.emit(this.EVENTS.mounted, this.id);
     }
 

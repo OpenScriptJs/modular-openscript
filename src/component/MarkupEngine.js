@@ -3,7 +3,12 @@ import Utils from "../utils/Utils.js";
 import Component from "./Component.js";
 import State from "../core/State.js";
 import { container } from "../core/Container.js";
-import { defineDomMethod, indirectEventHandler, isClass } from "../utils/helpers.js";
+import {
+  defineDomMethod,
+  indirectEventHandler,
+  isClass,
+  registerDomListeners,
+} from "../utils/helpers.js";
 
 /**
  * Base Markup Engine Class
@@ -37,13 +42,13 @@ export default class MarkupEngine {
   registerComponent = (name, componentClass) => {
     if (!(typeof name === "string")) {
       throw Error(
-        `MarkupEngine.Exception: A Component's name must be a string: type '${typeof name}' given`
+        `MarkupEngine.Exception: A Component's name must be a string: type '${typeof name}' given`,
       );
     }
 
     if (!(componentClass.prototype instanceof Component)) {
       throw new Error(
-        `MarkupEngine.Exception: The component for ${name} must be an Component component. ${componentClass.name} given`
+        `MarkupEngine.Exception: The component for ${name} must be an Component component. ${componentClass.name} given`,
       );
     }
 
@@ -83,7 +88,7 @@ export default class MarkupEngine {
     if (this.hasComponent(name)) return true;
 
     console.warn(
-      `MarkupEngine.Warn: Trying to ${method} an unregistered component {${name}}. Please ensure that the component is registered by using h.has(componentName)`
+      `MarkupEngine.Warn: Trying to ${method} an unregistered component {${name}}. Please ensure that the component is registered by using h.has(componentName)`,
     );
 
     return false;
@@ -105,7 +110,8 @@ export default class MarkupEngine {
       // remove the listener from the event map in the repository
       // since for each event, there is only the indirect event handler
       // listening to that event.
-      let eventMap = container.resolve("repository").domListeners.get(this) ?? new Map();
+      let eventMap =
+        container.resolve("repository").domListeners.get(this) ?? new Map();
 
       let listeners = eventMap.get(event) ?? new Set();
 
@@ -124,7 +130,9 @@ export default class MarkupEngine {
     };
 
     element.getEventListeners = function () {
-      return container.resolve("repository").domListeners.get(this) ?? new Map();
+      return (
+        container.resolve("repository").domListeners.get(this) ?? new Map()
+      );
     };
 
     element.toString = function () {
@@ -135,7 +143,8 @@ export default class MarkupEngine {
       let methods = {};
 
       // get the methods from the repository
-      let methodsMap = container.resolve("repository").domMethods.get(this) ?? new Map();
+      let methodsMap =
+        container.resolve("repository").domMethods.get(this) ?? new Map();
 
       for (let [k, v] of methodsMap) {
         methods[k] = v;
@@ -149,6 +158,7 @@ export default class MarkupEngine {
         this.removeEventListener(event, indirectEventHandler);
       });
       this.__eventListeners?.clear();
+      container.resolve("repository").domListeners.get(this)?.clear();
     };
 
     element.__openscript_cleanup__ = () => {
@@ -180,7 +190,7 @@ export default class MarkupEngine {
   handle = (name, ...args) => {
     if (!(typeof name === "string")) {
       throw Error(
-        `MarkupEngine.Exception: A Component's name must be a string: type '${typeof name}' given`
+        `MarkupEngine.Exception: A Component's name must be a string: type '${typeof name}' given`,
       );
     }
 
@@ -212,7 +222,6 @@ export default class MarkupEngine {
 
       return cmp.wrap(...args);
     }
-
 
     /**
      * @type {DocumentFragment|HTMLElement}
@@ -285,7 +294,7 @@ export default class MarkupEngine {
         if (k === "listeners") {
           if (typeof v !== "object") {
             throw TypeError(
-              `The value of 'listeners' should be an object. but found ${typeof v}`
+              `The value of 'listeners' should be an object. but found ${typeof v}`,
             );
           }
 
@@ -294,12 +303,12 @@ export default class MarkupEngine {
 
             if (Array.isArray(listener)) {
               listener.forEach((l) => {
-                this.registerDomListeners(root, evt, l);
+                registerDomListeners(root, evt, l);
               });
 
               root.addListener(evt, indirectEventHandler);
             } else {
-              this.registerDomListeners(root, evt, listener);
+              registerDomListeners(root, evt, listener);
               root.addListener(evt, indirectEventHandler);
             }
           }
@@ -310,10 +319,10 @@ export default class MarkupEngine {
         if (k === "methods") {
           if (typeof v !== "object") {
             throw TypeError(
-              `The value of 'methods' attribute should be an object. but found ${typeof v}`
+              `The value of 'methods' attribute should be an object. but found ${typeof v}`,
             );
           }
-          
+
           let methodMap = container.resolve("repository").domMethods.get(root);
           if (!methodMap) {
             methodMap = new Map();
@@ -346,7 +355,7 @@ export default class MarkupEngine {
             `MarkupEngine.ParseAttribute.Exception: `,
             e,
             `. Attributes resulting in the error: `,
-            obj
+            obj,
           );
           throw Error(e);
         }
@@ -444,7 +453,7 @@ export default class MarkupEngine {
     f = () => {
       const h = container.resolve("h");
       return h["ojs-group"]();
-    }
+    },
   ) => {
     return f();
   };
@@ -521,18 +530,5 @@ export default class MarkupEngine {
    */
   toElement = (value) => {
     return value;
-  };
-
-  registerDomListeners = (node, event, listener) => {
-    let eventMap = container.resolve("repository").domListeners.get(node);
-
-    if (!eventMap) {
-      eventMap = new Map();
-      container.resolve("repository").domListeners.set(node, eventMap);
-    }
-
-    let listeners = eventMap.get(event) ?? new Set();
-    listeners.add(listener);
-    eventMap.set(event, listeners);
   };
 }
