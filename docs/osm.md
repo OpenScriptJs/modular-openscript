@@ -190,3 +190,38 @@ h.div(
   ),
 );
 ```
+
+## Fragments (`h.$` or `h._`)
+
+Fragments allow you to group multiple elements without adding an extra node to the DOM. This is particularly useful when returning multiple root elements from a component or `h.call`.
+
+To create a fragment, use `h.$()` or `h._()`.
+
+> [!IMPORTANT]
+> **Single Root Requirement**: Even within a fragment, you must ensure there is a **single top-level element** that acts as the parent for the other elements in that fragment structure.
+
+```javascript
+// Correct Usage
+h.$(
+  h.div(
+    // Top-level parent in the fragment
+    h.span("Part 1"),
+    h.span("Part 2"),
+  ),
+);
+
+// Incorrect Usage (Multiple top-level siblings)
+// h.$ (
+//   h.div("Part 1"),
+//   h.div("Part 2")
+// )
+```
+
+### Component Wrapper Behavior
+
+Normally, a Component's markup is automatically wrapped in a custom element (e.g., `<ojs-my-component>`). However, **if a component returns a fragment**, this wrapper is **NOT** created.
+
+> [!CAUTION]
+> **State Reactivity Limitation**: Components that return fragments **cannot react to state changes** efficiently because there is no wrapper element to anchor the reconciler. Use fragments in components primarily for splitting up large render functions or for static content.
+>
+> **Top-Level Requirement**: While fragments avoid wrappers, your final application structure **Must** typically have a stable top-level element in the final markup for the framework to attach to.
