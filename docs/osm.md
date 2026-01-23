@@ -24,18 +24,81 @@ The `h` object is a **Proxy**. When you access a property on it (e.g., `h.div`, 
 
 ## Attributes & Properties
 
-You can pass attributes as the first argument to the tag function if it is an object (and not a DOM node or State).
+Attributes can be passed as **objects** at any point in the argument list. OpenScript treats any argument that is an object (and not a DOM Node or State) as an attributes object.
 
 ```javascript
-h.a(
+// Attributes can be anywhere
+h.div("Text first", { id: "my-div" }, " More text");
+
+// Multiple attributes objects are merged
+// Note: Underscores in keys are converted to dashes (data_role -> data-role)
+h.div({ id: "main" }, "Content", { data_role: "wrapper" });
+```
+
+### Class Merging
+
+Special attributes like `class` are intelligently handled. If you pass multiple class attributes (in different objects), they are **concatenated** rather than overwritten.
+
+```javascript
+h.div({ class: "btn" }, "Click Me", { class: "btn-primary" });
+// Output: <div class="btn btn-primary">Click Me</div>
+```
+
+### Event Handling & Memory Safety
+
+> [!WARNING]
+> **Avoid `addEventListener`**: Do not use the standard `element.addEventListener` methods on nodes created by OpenScript. Doing so can lead to memory leaks because the framework cannot track and automatically remove these listeners when the component is unmounted.
+
+Instead, always use the `listeners` attribute object. OpenScript modifies the DOM nodes to include safe `addListener` and `removeListener` methods that integrate with the framework's lifecycle management.
+
+```javascript
+h.button(
   {
-    href: "https://example.com",
-    class: "link primary",
-    target: "_blank",
-    id: "main-link",
+    listeners: {
+      click: (e) => console.log("Safe click", e),
+    },
   },
-  "Visit Example",
+  "Safe Button",
 );
+```
+
+### Extending Node Functionality (`methods`)
+
+You can attach custom methods to a DOM node at runtime using the `methods` attribute. This is useful for exposing logic that needs to be called externally (e.g., after retrieving the node via `document.getElementById`).
+
+```javascript
+h.div(
+  {
+    id: "my-widget",
+    methods: {
+      refresh: function () {
+        this.innerHTML = "Refreshed!"; // 'this' refers to the DOM element
+      },
+      getData: () => ({ id: 1, value: "test" }),
+    },
+  },
+  "Widget Content",
+);
+
+// Usage elsewhere:
+const widget = document.getElementById("my-widget");
+if (widget) {
+  widget.methods().refresh();
+}
+```
+
+### Inline Function Calls (`h.func`)
+
+The `h.func` helper formats a function and its arguments as a string, suitable for placement in inline event attributes (like `onclick`). This is how you pass function calls into string-based attributes.
+
+```javascript
+// In a component
+render() {
+  return h.div({
+    // Generates: onclick="greet('Levi', 42)"
+    onclick: h.func("greet", "Levi", 42)
+  }, "Click to Greet")
+}
 ```
 
 ### Boolean Attributes
@@ -73,4 +136,57 @@ Strings and numbers are automatically converted to text nodes.
 
 ```javascript
 h.p("You have ", 5, " notifications.");
+```
+
+## Logic & Helpers
+
+OpenScript provides helper functions to handle logic like iterations and conditionals directly within your markup structure.
+
+### Executing Logic (`h.call`)
+
+If you need to run arbitrary logic during the creation of the node structure, you can use `h.call(callback)`. The callback should return a valid OSM node (string, element, or array).
+
+```javascript
+h.div(
+  { class: "container" },
+  h.call(() => {
+    // Perform complex logic here
+    const date = new Date();
+    return h.span(`Created at: ${date.toLocaleTimeString()}`);
+  }),
+);
+```
+
+### Iteration (`each`)
+
+The `each` helper iterates over an array or object and returns an array of results.
+
+```javascript
+import { app, each } from "modular-openscriptjs";
+
+const items = ["Apple", "Banana", "Cherry"];
+
+h.ul(
+  each(items, (item, index) => {
+    return h.li({ "data-index": index }, item);
+  }),
+);
+```
+
+### Conditionals (`ifElse`)
+
+The `ifElse` helper (or `Utils.ifElse`) allows you to conditionally render content.
+
+```javascript
+import { app, ifElse } from "modular-openscriptjs";
+
+const isLoggedIn = true;
+
+h.div(
+  ifElse(
+    isLoggedIn,
+    () => h.button("Logout"), // True branch (function executed)
+    h.button("Login"), // False branch (value returned)
+  ),
+);
 ```
