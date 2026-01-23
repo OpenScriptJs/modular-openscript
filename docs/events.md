@@ -72,14 +72,9 @@ this.send(
 Listeners created with `$$` (or standard broker listeners) receive these arguments.
 
 ```javascript
-async $$auth_login(payloadObj) {
-  // payloadObj is the message/data directly if spread,
-  // OR the EventData object depending on how it was sent.
-  // Generally, OpenScript broker spreads arguments.
-
-  // If sent as above:
-  // args[0] = { username: "Levi", id: 1 }
-  // args[1] = { timestamp: ... }
+async $$auth_login(eventData, event) {
+  // eventData is the JSON string payload
+  // event is the specific event string that triggered this listener
 }
 ```
 

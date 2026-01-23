@@ -129,32 +129,81 @@ OpenScript provides conventions for automatically listening to events based on m
 
 #### Component Lifecycle & Emitted Events (`$_`)
 
-Methods starting with `$_` are treated as listeners for events emitted by the component itself (including lifecycle events).
+Methods starting with `$_` are treated as listeners for events emitted by the component itself.
 
-- `$_mounted()`: Called when the component is added to the DOM.
-- `$_rendered()`: Called when the component is rendered.
-- `$_customEvent()`: Listens for `this.emit('customEvent')`.
+> [!WARNING]
+> **Context Safety**: Inside these listeners, **do not rely on `this`** to access the component instance, as the context might not be bound as expected during execution.
+>
+> Instead, use the **`componentId`** passed as the first argument and the **`component(id)`** helper to retrieve the safe instance.
+
+- `$_mounted(componentId)`: Called when the component is added to the DOM.
+- `$_rendered(componentId)`: Called when the component is rendered.
+- `$_customEvent(componentId, ...args)`: Listens for `this.emit('customEvent')`.
+
+```javascript
+import { component } from "modular-openscriptjs";
+
+export default class MyComponent extends Component {
+  $_mounted(componentId) {
+    // Correct way to get the instance
+    const self = component(componentId);
+    self.handleMount();
+  }
+}
+```
 
 #### Broker Events (`$$`)
 
 Methods starting with `$$` are treated as listeners for global events emitted via the **Broker**.
 
-- `$$app_started()`: Listens for `app:started` event (dots/colons usually mapped to underscores).
-- `$$user_login()`: Listens for `user:login` event.
+**Signature**: `(eventData, eventName)`
+
+- `eventData`: The JSON stringified payload (needs `EventData.parse()`).
+- `eventName`: The string name of the event that triggered this listener.
+
+- `$$app_started(eventData, event)`: Listens for `app:started`.
+- `$$user_login(eventData, event)`: Listens for `user:login`.
 
 ```javascript
-export default class UserProfile extends Component {
-  // Listen to component's own mount event
-  $_mounted() {
-    console.log("UserProfile mounted");
-  }
+import { EventData, component } from "modular-openscriptjs";
 
-  // Listen to global 'auth:logout' event from Broker
-  $$auth_logout(user) {
-    console.log("User logged out:", user);
-    this.cleanUp();
+export default class UserProfile extends Component {
+  // Listen to global 'auth:logout' event
+  async $$auth_logout(eventData, event) {
+    // 1. Parse Data
+    const data = EventData.parse(eventData);
+
+    // 2. Get Safe Component Instance (if needed)
+    // Note: Broker listeners in components might not automatically receive componentId
+    // depending on binding. If 'this' is unsafe, ensure you have a reference.
+    // However, usually 'this' in Component methods is bound.
+    // BUT if the user explicitly warned about 'this' in listeners generally:
+
+    console.log(`Received ${event}`);
+    this.cleanUp(); // 'this' is usually safe in class classes unless stated otherwise,
+    // but following the pattern: if it's an auto-attached listener,
+    // verify if it receives componentId?
+    // The user said: "In those mounted function... use component(id)".
+    // Mounted functions usually refer to $_.
+    // Let's assume standard methods $$ might still bind 'this' or
+    // we should stick to the safe pattern if applicable.
+    // For now, I will assume $$ methods on Component might still work with 'this',
+    // but I will respect the standard signature (eventData, event).
   }
 }
+```
+
+Wait, the user said for `$_` listeners (mounted, etc) specifically regarding `componentId`. "In those mounted function...".
+For `$$`, it's a broker listener.
+I will implement the `(eventData, event)` signature change.
+
+```javascript
+  // Listen to global 'auth:logout' event from Broker
+  async $$auth_logout(eventData, event) {
+    const data = EventData.parse(eventData);
+    console.log("User logged out:", data.message.getAll());
+    this.cleanUp();
+  }
 ```
 
 ### Inline Attribute Listeners

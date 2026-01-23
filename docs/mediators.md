@@ -36,11 +36,11 @@ import { EventData } from "modular-openscriptjs";
  * - 'login' event
  * (NOT 'user:login')
  */
-async $$user_login(eventData) {
+async $$user_login(eventData, event) {
   // Parse the JSON string payload
   const data = EventData.parse(eventData);
 
-  console.log("Triggered by 'user' OR 'login' event");
+  console.log(`Triggered by '${event}'`);
   console.log("User ID:", data.message.get("id"));
 }
 ```
@@ -53,13 +53,13 @@ To listen to namespaced events (e.g., `user:login`, `user:logout`), you should u
 // Property starts with $$ -> 'auth' namespace
 $$auth = {
   // Listens for 'auth:login'
-  login: async (eventData) => {
+  login: async (eventData, event) => {
     const data = EventData.parse(eventData);
     this.handleLogin(data);
   },
 
   // Listens for 'auth:logout'
-  logout: async () => {
+  logout: async (eventData, event) => {
     this.handleLogout();
   },
 
@@ -96,7 +96,7 @@ Mediators can send events using `this.send(event, payload(...))` or `this.broadc
 ```javascript
 import { payload } from "modular-openscriptjs";
 
-async $$auth_login(eventData) {
+async $$auth_login(eventData, event) {
   // Validate...
   this.send(
       "user:is:authenticated",
