@@ -43,6 +43,12 @@ ojs(MyComponent);
 4.  **`ojs(MyComponent)`**: Registers the component with the framework.
 5.  **Passing Arguments**: The `render` method receives `...args` which can contain parent elements, attributes, or other data passed during rendering. Always spread `...args` in your root element or handle them appropriately.
 
+> [!IMPORTANT]
+> **Registration is Required Before Use**
+> You **MUST** call `ojs(YourComponent)` to register the component in the IoC container. This **MUST** happen before you try to use the component (e.g., `h.YourComponent()`).
+>
+> The most common pattern is to call `ojs(YourComponent)` at the very end of your component file, ensuring it is registered as soon as the file is imported.
+
 ## Functional Components
 
 Functional components are simpler and are best used for presentational components that don't require complex state management or lifecycle hooks.

@@ -23,7 +23,6 @@ export function namespace(name) {
 
 export function cleanUpNode(node) {
   node.__openscript_cleanup__?.();
-  node.__eventListeners = null;
 }
 
 /**

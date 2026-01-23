@@ -7,12 +7,36 @@ Mediators act as the bridge between your application's logic (backend/services) 
 Mediators are **stateless** classes that listen for events, execute logic (like API calls or data processing), and then potentially emit new events. They do not manipulate the DOM directly.
 
 ```javascript
-// Example Mediator structure
+// AuthMediator.js
 export default class AuthMediator extends Mediator {
   shouldRegister() {
-    return true; // Control registration logic
+    return true;
   }
 }
+```
+
+### Best Practice: `boot.js`
+
+For Mediators, it is best practice to have a dedicated `boot.js` (or `mediators.js`) file that imports and registers them all. This ensures they are registered early in the application lifecycle.
+
+```javascript
+// src/boot.js
+import { ojs } from "modular-openscriptjs";
+import AuthMediator from "./mediators/AuthMediator";
+import CartMediator from "./mediators/CartMediator";
+
+export default function boot() {
+  ojs(AuthMediator, CartMediator);
+}
+```
+
+Then, in your `main.js`:
+
+```javascript
+// src/main.js
+import boot from "./boot";
+
+boot(); // Registers all mediators
 ```
 
 ## Broker Registration
