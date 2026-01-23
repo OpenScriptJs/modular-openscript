@@ -1,5 +1,6 @@
 import { app } from "modular-openscriptjs";
 import { appEvents } from "./events.js";
+import { registerNodeDisposalCallback } from "../../../src/index.js";
 
 /*----------------------------------
  | Do OpenScript Configurations Here
@@ -82,4 +83,9 @@ export function configureApp() {
    * ---------------------------------------------
    */
   container.value("appEvents", appEvents);
+
+  registerNodeDisposalCallback((node) => {
+    // write any cleanup logic here
+    // such as disposing Bootstrap components attached to the node.
+  });
 }

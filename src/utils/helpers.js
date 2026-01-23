@@ -71,6 +71,12 @@ export function destroyNodeDeep(node) {
     destroyNodeDeep(child);
   }
 
+  if(container.resolve("repository")?.getNodeDisposalCallbacks()?.size) {
+    for (const callback of container.resolve("repository").getNodeDisposalCallbacks()) {
+      callback(node);
+    }
+  }
+
   cleanUpNode(node);
 }
 
@@ -104,4 +110,25 @@ export function registerDomListeners(node, event, listener) {
   let listeners = eventMap.get(event) ?? new Set();
   listeners.add(listener);
   eventMap.set(event, listeners);
+}
+
+/**
+ * used to safely remove a node from the DOM
+ * @param {Node} node 
+ */
+export function removeNode(node) {
+  destroyNodeDeep(node);
+  node.remove();
+}
+
+/**
+ * used to register a callback that will be called when a node is removed from the DOM. Use this to clean up the node to avoid memory leaks. e.g. Remove Bootstrap components attached to the node. 
+ * **The Callback Must Be Stateless!**  
+ * **It must not be asynchronous!**  
+ * **If you don't understand, GOOGLE IT!**  
+ * @param {(node: Node) => void} syncStatelessCallback
+ * @returns {void}
+ */
+export function registerNodeDisposalCallback(syncStatelessCallback) {
+  container.resolve("repository").nodeDisposalCallbacks?.add(syncStatelessCallback);
 }

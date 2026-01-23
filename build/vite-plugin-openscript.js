@@ -203,8 +203,15 @@ export function openScriptComponentPlugin(options = {}) {
       if (hasChanged) {
         // Check if Component is imported
         // Matches: import { Component } ... or import ... Component ...
+        // We use a regex that supports multi-line named imports by looking inside braces
+
+        const hasNamedImport =
+          /import\s*\{[^}]*?\bComponent\b[^}]*?\}\s*from/.test(code);
+        const hasDefaultOrNamespaceImport =
+          /import\s+(?:[\w*\s,]*\bComponent\b)/.test(code);
+
         // Simple check:
-        if (!code.includes("import") || !code.match(/import\s+.*Component/)) {
+        if (!hasNamedImport && !hasDefaultOrNamespaceImport) {
           // Need to import Component.
           // Check if existing import from "modular-openscriptjs" exists
           if (code.includes("modular-openscriptjs")) {

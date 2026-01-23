@@ -86,7 +86,42 @@ export default class Container {
     });
     return this;
   }
-
+  /**
+   * Access services from the IoC container
+   * @overload
+   * @param {'h'} instance - Get the MarkupEngine instance
+   * @returns {MarkupEngine}
+   */
+  /**
+   * @overload
+   * @param {'repository'} instance - Get the Repository instance
+   * @returns {Repository}
+   */
+  /**
+   * @overload
+   * @param {'router'} instance - Get the Router instance
+   * @returns {Router}
+   */
+  /**
+   * @overload
+   * @param {'broker'} instance - Get the Broker instance
+   * @returns {Broker}
+   */
+  /**
+   * @overload
+   * @param {'contextProvider'} instance - Get the ContextProvider instance
+   * @returns {ContextProvider}
+   */
+  /**
+   * @overload
+   * @param {'mediatorManager'} instance - Get the MediatorManager instance
+   * @returns {MediatorManager}
+   */
+  /**
+   * @overload
+   * @param {'repository'} instance - Get the Repository instance
+   * @returns {Repository}
+   */
   /**
    * Resolve a service by name
    * @param {string} name - Service identifier

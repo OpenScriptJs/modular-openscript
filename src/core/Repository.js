@@ -36,6 +36,8 @@ export default class Repository {
 
     this.domListeners = new WeakMap();
     this.domMethods = new WeakMap();
+
+    this.nodeDisposalCallbacks = new Set();
   }
 
   /**
@@ -155,5 +157,13 @@ export default class Repository {
     let component = this.findComponent(componentId);
     if (!component) return;
     this.componentArgsMap.delete(component);
+  }
+
+  /**
+   * Get the node disposal callbacks
+   * @returns {Set<Function>}
+   */
+  getNodeDisposalCallbacks() {
+    return this.nodeDisposalCallbacks;
   }
 }

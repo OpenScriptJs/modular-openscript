@@ -23,7 +23,7 @@ import MarkupHandler from "./component/MarkupHandler.js";
 
 import Utils from "./utils/Utils.js";
 import DOM from "./utils/DOM.js";
-import { cleanUpNode, isClass } from "./utils/helpers.js";
+import { cleanUpNode, isClass, registerNodeDisposalCallback, removeNode } from "./utils/helpers.js";
 
 // Initialize global instances
 const broker = new Broker();
@@ -191,6 +191,8 @@ export {
   payload,
   ojsRouterEvents,
   removeNodeModifications,
+  removeNode,
+  registerNodeDisposalCallback
 };
 
 // Default export object
@@ -233,6 +235,8 @@ export default {
   payload,
   ojsRouterEvents,
   removeNodeModifications,
+  removeNode,
+  registerNodeDisposalCallback
 };
 
 // Add necessary globals

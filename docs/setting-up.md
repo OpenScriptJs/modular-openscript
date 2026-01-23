@@ -170,11 +170,25 @@ export function configureApp() {
    * ---------------------------------------------
    */
   app().value("appEvents", appEvents);
+
+  /**
+   * ---------------------------------------------
+   * Node Disposal Callback
+   * ---------------------------------------------
+   * Use this to clean up external library instances
+   * attached to DOM nodes when they are removed.
+   */
+  registerNodeDisposalCallback((node) => {
+    // Example: Dispose Bootstrap tooltips/popovers
+    // if (node._bootstrap_tooltip) node._bootstrap_tooltip.dispose();
+  });
 }
 
 // execute configuration
 configureApp();
 ```
+
+> **Note**: `registerNodeDisposalCallback` is crucial for preventing memory leaks when using third-party libraries that attach instances to DOM elements (like Bootstrap, Tippy.js, etc.). The callback **MUST** be synchronous and stateless.
 
 > **Note**: In the configuration above, we are using `appEvents` imported from `events.js`. We will cover the creation of `events.js` and how to handle events in the subsequent sections.
 
