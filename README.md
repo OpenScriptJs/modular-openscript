@@ -1,18 +1,52 @@
-# Modular OpenScript Framework
+# OpenScriptJs
 
-A modern, modular, event-driven JavaScript framework built for scalability and maintainability. OpenScript combines the power of **Inversion of Control (IoC)**, **Reactive State Management**, and a **Component-Based Architecture** into a lightweight package with zero runtime dependencies.
+<p align="center">
+  <a href="https://github.com/OpenScriptJs/modular-openscript" target="_blank">
+    <!-- You can add a logo here if available -->
+    <img src="https://via.placeholder.com/200x50?text=OpenScriptJs" alt="OpenScriptJs Logo" width="200">
+  </a>
+</p>
 
-## 🚀 Key Features
+<p align="center">
+    <strong>The Progressive, PHP-Inspired JavaScript Framework for Artisans.</strong>
+</p>
 
-- **IoC Container**: Centralized dependency management using a robust container and `app()` helper.
-- **Reactive State**: Proxy-based state management with automatic UI updates using `state()`.
-- **Event-Driven**: Powerful `Broker` and `Mediator` pattern for decoupled communication.
-- **Component-Based**: Class-based components with lifecycle hooks and functional stateless components.
-- **OpenScript Markup (OSM)**: A powerful DSL for generating HTML without a Virtual DOM overhead.
-- **Fluent Router**: Expressive, fluent API for client-side routing with nested routes and grouping.
-- **Context API**: Share state globally without prop drilling.
-- **Lightweight**: Zero runtime dependencies, pure JavaScript.
-- **Vite Integration**: Optimized build process with automatic component discovery.
+<p align="center">
+    <a href="https://www.npmjs.com/package/modular-openscriptjs"><img src="https://img.shields.io/npm/v/modular-openscriptjs.svg?style=flat-square" alt="NPM Version"></a>
+    <a href="https://github.com/OpenScriptJs/modular-openscript/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/modular-openscriptjs.svg?style=flat-square" alt="License"></a>
+    <a href="https://github.com/OpenScriptJs/modular-openscript/issues"><img src="https://img.shields.io/github/issues/OpenScriptJs/modular-openscript?style=flat-square" alt="Issues"></a>
+</p>
+
+## Introduction
+
+OpenScriptJs is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. OpenScript attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as simple routing, powerful state management, and decoupled event handling.
+
+It combines the best concepts from sophisticated backend architectures—like **Inversion of Control (IoC)** and **Mediator Patterns**—with the modern reactivity of frontend development. The result is a lightweight, zero-dependency framework that scales from small widgets to complex Single Page Applications without the bloat.
+
+## 🚀 Why OpenScriptJs?
+
+We didn't just build another framework; we built a toolset for developers who value structure and clarity.
+
+- **IoC Container**:  
+  _Why?_ Managing dependencies manually is messy. Our robust container and `app()` helper give you a centralized way to manage your services, promoting loose coupling and testability.
+
+- **Reactive State**:  
+  _Why?_ UI should be a function of state. Our proxy-based `state()` system automatically updates your DOM when data changes, without the complexity of a Virtual DOM.
+
+- **Event-Driven Architecture**:  
+  _Why?_ Components shouldn't talk directly to each other; it leads to spaghetti code. Our powerful `Broker` and `Mediator` pattern enables true decoupling.
+
+- **Component-Based**:  
+  _Why?_ Reusability is key. Build encapsulated functional or class-based components with full lifecycle hooks.
+
+- **OpenScript Markup (OSM)**:  
+  _Why?_ Context switching between HTML and JS breaks flow. OSM allows you to generate HTML using expressive JavaScript, giving you the full power of the language right in your views.
+
+- **Fluent Router & Context API**:  
+  _Why?_ Modern apps need robust navigation and global state sharing without "prop drilling". We provide both out of the box.
+
+- **Zero Dependencies**:  
+  _Why?_ Bloat slows you down. OpenScriptJs is pure, lightweight JavaScript.
 
 ---
 
@@ -468,6 +502,14 @@ export default function Card(title, content, ...args) {
 }
 ```
 
+### 💡 Choosing the Right Component Type
+
+- **Use Functional Components** when your component is just receiving data and displaying it. They are lighter, faster, and easier to test.
+- **Use Class Components** when you need:
+  - Internal state (toggle buttons, form inputs).
+  - Lifecycle hooks (`$_mounted` for API calls or setting up 3rd party libs).
+  - Complex event handlers.
+
 ### Naming Conventions
 
 - **Classes/Functions**: PascalCase (e.g., `UserProfile`).
@@ -550,6 +592,16 @@ h.button({ onclick: this.method("handleClick") }, "Click");
 ## 4. OpenScript Markup (OSM)
 
 OpenScript Markup (OSM) is a powerful, JavaScript-based Domain Specific Language (DSL) for generating HTML. At its core is the `h` proxy service, which translates property accessors into DOM elements.
+
+### 💡 Why OSM?
+
+You might ask, "Why not just use HTML or JSX?"
+
+While JSX is popular, it requires a build step. **OSM is pure JavaScript.**
+
+- **No Compilation Required**: It works directly in the browser.
+- **Full Power of JS**: You can use `map`, `filter`, variables, and functions directly within your structure without context switching.
+- **Composition**: Functions can return arrays of elements, making composition trivial.
 
 ### Basic Usage
 
@@ -732,6 +784,13 @@ h.UserProfile({
 
 OpenScript uses the `State` class to handle reactive data. When a state's value changes, any dependent components or listeners are automatically notified, triggering UI updates.
 
+### ⚡ The Magic of Proxies
+
+OpenScript leverages modern JavaScript **Proxies**. This means you don't need special setter functions like `setState({ count: 1 })` found in other frameworks. You simply assign the value, and the framework handles the rest.
+
+- **Clean Syntax**: `count.value = 5`. That's it.
+- **Micro-Updates**: Only the specific nodes bound to that state update in the DOM. The entire component doesn't necessarily re-render, making it incredibly performant.
+
 ### Creating State
 
 You create a state object using the `state` helper function. States can hold primitives(strings, numbers, booleans) or objects.
@@ -833,7 +892,18 @@ count.listener((s) => {
 
 ## 6. Context API
 
-The Context API provides a mechanism to share state and data across decoupled components and mediators without the need for "prop drilling" (passing data through multiple layers of components). It acts as a shared, central repository for specific domains of your application (e.g., Global, User, Theme).
+The Context API provides a mechanism to share state and data across decoupled components and mediators without the need for "prop drilling" (passing data through multiple layers of components). It acts as a shared, central repository for specific domains of your application.
+
+### 💼 Common Use Cases
+
+Use Context for data that is truly global:
+
+- **User Session**: Is the user logged in? Who are they?
+- **Theme Settings**: Dark mode vs Light mode.
+- **Language/Localization**: Current active language.
+- **Shopping Cart**: Items currently in the cart.
+
+For everything else (form inputs, toggle states), stick to local Component State to keep your app simple.
 
 ### Setup & Definition
 
@@ -1028,13 +1098,21 @@ Once parsed, the `data` object gives you safe ways to access info:
 ## 8. Mediators
 
 Mediators are the **"Logic Handlers"** of your application.
-In standard frontend frameworks, you might mix your API calls and business logic right inside your UI components. In OpenScript, we separate them.
 
-**Think of it like a Restaurant:**
+### 🧠 Philosophy: Separation of Concerns
 
-- **Component (Waiter)**: Takes the order (Button Click) and sends it to the kitchen. It doesn't cook.
-- **Mediator (Chef)**: Listens for the order, cooks the food (API Call / Logic), and places it on the counter.
-- **Broker (Counter)**: The place where orders and food are exchanged.
+In many frameworks, business logic often bleeds into UI components, making them hard to read and impossible to test. OpenScript enforces a strict separation:
+
+- **Components**: Responsible ONLY for rendering and user interaction.
+- **Mediators**: Responsible for API calls, data manipulation, and business rules.
+
+#### The Restaurant Analogy
+
+Think of your application like a busy restaurant:
+
+- **Component (Waiter)**: Takes the order (Button Click) and sends it to the kitchen. It doesn't cook anything; it just shouting "Order Up!".
+- **Mediator (Chef)**: Listens for the order, cooks the food (API Call), and rings the bell when done.
+- **Broker (Counter)**: The central communication hub where orders are placed and picked up.
 
 ### 1. Creating a Mediator
 
@@ -1276,8 +1354,12 @@ router.default(() => {
 
 ## 10. IoC Container
 
-As your app grows, managing connections between everything (Routers, APIs, Settings) becomes messy.
-The **IoC (Inversion of Control) Container** solves this by acting as a "central warehouse" for all your services.
+As your app grows, managing connections between everything (Routers, APIs, Settings) becomes messy. The **IoC (Inversion of Control) Container** solves this by acting as a "central warehouse" for all your services.
+
+### 🏭 Why Inversion of Control?
+
+Directly importing dependencies (e.g., `import api from './api'`) creates rigid, hard-to-test code.
+The IoC container allows you to swap implementations easily. This is excellent for testing: you can inject a "Fake API" when running unit tests without changing a single line of your component code.
 
 Instead of writing `new ApiService()` everywhere, you simply ask the container: _"Hey, give me the API Service"_ and it hands it to you.
 
@@ -1504,7 +1586,41 @@ If a class string gets too long, extract it to CSS using `@apply`.
 }
 ```
 
-````javascript
+```javascript
 h.button({ class: "btn-primary" }, "Click Me");
-```- **`v(state, cb)`**: Create an anonymous reactive text node.
-````
+```
+
+---
+
+## 🤝 Contributing
+
+Thank you for considering contributing to the OpenScriptJs framework! The contribution guide works as follows:
+
+1.  Fork the repository.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
+
+If you discover a security vulnerability within OpenScriptJs, please send an e-mail to Levi Kamara Zwannah via [levizwannah@gmail.com](mailto:levizwannah@gmail.com). All security vulnerabilities will be promptly addressed.
+
+## 🐛 Reporting Bugs
+
+If you encounter any bugs or issues, please report them using the [GitHub Issue Tracker](https://github.com/OpenScriptJs/modular-openscript/issues). Please include:
+
+- A detailed description of the bug.
+- Steps to reproduce the behavior.
+- Expected vs. actual results.
+- Screenshots or code snippets if applicable.
+
+## 📜 License
+
+The OpenScriptJs framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## ✍️ Author
+
+OpenScriptJs is a product of **Levi Kamara Zwannah**.
+
+---
+
+_Built with ❤️ for developers who love code._
