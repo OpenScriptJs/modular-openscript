@@ -52,7 +52,7 @@ The `$$` prefix is used to define event listeners. OpenScript interprets these p
 If you use an underscore in the method name after `$$`, it acts as an **OR** operator. The method will key off **multiple independent events**.
 
 ```javascript
-import { EventData } from "modular-openscriptjs";
+import { parsePayload } from "modular-openscriptjs";
 
 /*
  * Listens for:
@@ -62,7 +62,7 @@ import { EventData } from "modular-openscriptjs";
  */
 async $$user_login(eventData, event) {
   // Parse the JSON string payload
-  const data = EventData.parse(eventData);
+  const data = parsePayload(eventData);
 
   console.log(`Triggered by '${event}'`);
   console.log("User ID:", data.message.get("id"));
@@ -78,7 +78,7 @@ To listen to namespaced events (e.g., `user:login`, `user:logout`), you should u
 $$auth = {
   // Listens for 'auth:login'
   login: async (eventData, event) => {
-    const data = EventData.parse(eventData);
+    const data = parsePayload(eventData);
     this.handleLogin(data);
   },
 

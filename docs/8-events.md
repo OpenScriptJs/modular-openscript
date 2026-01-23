@@ -85,10 +85,10 @@ async $$auth_login(eventData, event) {
 When an event is received (e.g., in a Mediator), the payload is often a **JSON string**. You must parse it back into an `EventData` object to access the helpers.
 
 ```javascript
-import { EventData } from "modular-openscriptjs";
+import { parsePayload } from "modular-openscriptjs";
 
 // ... in a listener
-const eventData = EventData.parse(payloadString);
+const eventData = parsePayload(payloadString);
 ```
 
 ### EventData Helper Methods

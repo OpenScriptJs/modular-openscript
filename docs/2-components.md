@@ -165,20 +165,20 @@ Methods starting with `$$` are treated as listeners for global events emitted vi
 
 **Signature**: `(eventData, eventName)`
 
-- `eventData`: The JSON stringified payload (needs `EventData.parse()`).
+- `eventData`: The JSON stringified payload (needs `parsePayload()`).
 - `eventName`: The string name of the event that triggered this listener.
 
 - `$$app_started(eventData, event)`: Listens for `app:started`.
 - `$$user_login(eventData, event)`: Listens for `user:login`.
 
 ```javascript
-import { EventData, component } from "modular-openscriptjs";
+import { parsePayload, component } from "modular-openscriptjs";
 
 export default class UserProfile extends Component {
   // Listen to global 'auth:logout' event
   async $$auth_logout(eventData, event) {
     // 1. Parse Data
-    const data = EventData.parse(eventData);
+    const data = parsePayload(eventData);
     console.log(`Received ${event}`);
   }
 }
