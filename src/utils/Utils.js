@@ -7,24 +7,26 @@ export default class Utils {
     /**
      * Runs a foreach on an array
      * @param {Iterable} array
-     * @param {Function} callback
+     * @param {(v: any, index: Number) => any} callback
      */
-    static each = (array, callback = (v, index) => v) => {
+    static each = (array, callback = null) => {
+        if (!callback) callback = (v) => v;
+
         let output = [];
-        if (Array.isArray(array)) {
-            array.forEach((v, i) => output.push(callback(v, i)));
-        } else {
-            for (let k in array) output.push(callback(array[k], k));
-        }
+
+        for (let k in array) output.push(callback(array[k], k));
+
         return output;
     };
 
     /**
      * Iterates over array elements using setTimeout
      * @param {Iterable} array
-     * @param {Function} callback
+     * @param {(v: any) => any} callback
      */
-    static lazyFor = (array, callback = (v) => v) => {
+    static lazyFor = (array, callback = null) => {
+        if (!callback) callback = (v) => v;
+
         let index = 0;
 
         if (array.length < 1) return;

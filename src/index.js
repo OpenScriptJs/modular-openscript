@@ -64,6 +64,7 @@ const putContext = (referenceName, qualifiedName) =>
   contextProvider.load(referenceName, qualifiedName);
 const lazyFor = Utils.lazyFor;
 const each = Utils.each;
+const parsePayload = Utils.parsePayload;
 const component = (componentId) => app("repository").findComponent(componentId);
 const eData = (meta = {}, message = {}) => {
   return new EventData().meta(meta).message(message).encode();
@@ -189,6 +190,7 @@ export {
   component,
   eData,
   payload,
+  parsePayload,
   ojsRouterEvents,
   removeNodeModifications,
   removeNode,
@@ -233,6 +235,7 @@ export default {
   component,
   eData,
   payload,
+  parsePayload,
   ojsRouterEvents,
   removeNodeModifications,
   removeNode,
