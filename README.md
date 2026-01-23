@@ -419,7 +419,7 @@ Components are the building blocks of your UI.
 
 ### Class Components
 
-Extend `Component` for stateful logic and lifecycle hooks.
+Class components extend `Component` and provide state management, lifecycle hooks, and event handling.
 
 ```javascript
 import { Component, app, ojs, state } from "modular-openscriptjs";
@@ -432,10 +432,21 @@ export default class Counter extends Component {
     this.count = state(0);
   }
 
-  render() {
+  // Lifecycle Methods (prefixed with $_)
+  // CRITICAL: Always use component(id) to get the instance safely.
+  $_mounted(id) {
+    console.log(`Counter ${id} mounted`);
+  }
+
+  increment() {
+    this.count.value++;
+  }
+
+  render(...args) {
     return h.div(
       h.h1(`Count: ${this.count.value}`),
-      h.button({ onclick: () => this.count.value++ }, "Increment"),
+      h.button({ onclick: this.method("increment") }, "Increment"),
+      ...args,
     );
   }
 }
@@ -449,221 +460,693 @@ ojs(Counter);
 
 ### Functional Components
 
-Simple functions for stateless UI.
+Simple functions for stateless UI. They receive `props` (arguments) and return markup.
 
 ```javascript
-export default function Card({ title, content }) {
-  return h.div({ class: "card" }, h.h2(title), h.p(content));
+export default function Card(title, content, ...args) {
+  return h.div({ class: "card" }, h.h2(title), h.p(content), ...args);
 }
 ```
 
+### Naming Conventions
+
+- **Classes/Functions**: PascalCase (e.g., `UserProfile`).
+- **Files**: PascalCase (e.g., `UserProfile.js`).
+- **Tags**: Kebab-case (automatically derived, e.g., `<ojs-user-profile>`).
+
 ### Event Listening
 
-Use the `listeners` object for safe event binding.
+There are multiple ways to listen to events in a component.
+
+#### 1. DOM Events (`listeners`)
+
+Use the `listeners` object in attributes for safe binding. This is the **preferred** method.
 
 ```javascript
 h.button(
   {
-    class: "btn",
     listeners: {
-      click: (e) => console.log("Clicked!"),
-      mouseover: () => console.log("Hovered"),
+      // Use anonymous functions for safety
+      click: (e) => this.increment(),
     },
   },
   "Click Me",
 );
 ```
 
-#### Special Lifecycle Methods
+#### 2. Lifecycle Events (`$_`)
 
-- `$_mounted(componentId)`: Component added to DOM.
-- `$_rendered(componentId)`: Component rendered.
+Methods prefixed with `$_` hook into the component's lifecycle and internal events.
 
-> **Note**: Use `component(componentId)` inside these methods to get a safe reference to the instance if `this` is not bound correctly.
+- **`$_mounted(componentId)`**: Called when the component is added to the DOM.
+- **`$_rendered(componentId)`**: Called after the component renders.
+
+> [!WARNING]
+> **Context Safety**: Inside `$_` methods, **do not rely on `this`** directly. The context might not be bound as expected.
+> Instead, use the `component(id)` helper:
+>
+> ```javascript
+> import { component } from "modular-openscriptjs";
+>
+> $_mounted(id) {
+>    const self = component(id); // Safe instance access
+>    self.initData();
+> }
+> ```
+
+#### 3. Broker Events (`$$`)
+
+Listen to global application events dispatched via the Broker. Methods prefixed with `$$` are automatically registered as listeners.
+
+**Signature**: `(eventData, eventName)`
+
+- `eventData`: The JSON stringified payload (must be parsed).
+- `eventName`: The specific event name triggered.
+
+```javascript
+import { EventData } from "modular-openscriptjs";
+
+export default class UserProfile extends Component {
+  // Listen for 'auth:login' event
+  async $$auth_login(eventData, eventName) {
+    // 1. Parse the payload
+    const data = EventData.parse(eventData);
+
+    console.log("User Logged In:", data.message.get("userId"));
+  }
+}
+```
+
+#### 4. Inline Attribute Listeners
+
+For attributes that expect a string script (like `onclick`), use `this.method()`.
+
+```javascript
+h.button({ onclick: this.method("handleClick") }, "Click");
+```
 
 ---
 
 ## 4. OpenScript Markup (OSM)
 
-OSM is a DSL for generating HTML using the `h` proxy.
+OpenScript Markup (OSM) is a powerful, JavaScript-based Domain Specific Language (DSL) for generating HTML. At its core is the `h` proxy service, which translates property accessors into DOM elements.
 
 ### Basic Usage
 
+You access OSM via the `h` service from the IoC container.
+
 ```javascript
+import { app } from "modular-openscriptjs";
+
 const h = app("h");
 
-h.div({ id: "main", class: "container" }, h.h1("Title"), h.p("Paragraph text"));
+// Simple element
+// The proxy intercepts 'div' and creates a <div> element
+const myDiv = h.div({ id: "main" }, "Hello World");
 ```
 
-### Attributes
+### Attributes & Properties
 
-Pass attributes as objects. Multiple objects are merged. Class strings are concatenated.
+Attributes are passed as properties in an object argument. Flexible placement of arguments allows you to pass attributes anywhere in the function call.
 
 ```javascript
-h.div({ class: "btn" }, "Text", { class: "btn-primary", "data-id": 1 });
-// <div class="btn btn-primary" data-id="1">Text</div>
+// Attributes can be first, middle, or last
+h.div("Text Content", { class: "text-lg" }, h.span("Child"));
 ```
 
-### Special Attributes
+#### Class Merging
 
-- **`parent`**: Append directly to a DOM node.
-- **`resetParent`**: Clear parent before appending.
-- **`replaceParent`**: Replace the parent node.
-- **`listeners`**: Safe event listeners object.
-- **`c_attr` / `$`-prefix**: Pass attributes to the component wrapper (e.g., `$class: "wrapper-class"`).
+OSM intelligently handles the `class` attribute. If you pass multiple objects containing `class`, they are **concatenated** rather than overwritten. This is incredibly useful for conditional styling.
 
-### Fragments
+```javascript
+h.button({ class: "btn" }, "Click Me", { class: "btn-primary" });
+// Result: <button class="btn btn-primary">Click Me</button>
+```
 
-Use `h.$()` or `h._()` to group elements without a wrapper.
+#### Event Handling (`listeners`)
+
+> [!WARNING]
+> **Memory Safety**: Do not use standard `addEventListener` on nodes created by OpenScript, as it can lead to memory leaks when components are unmounted.
+
+Instead, usage the `listeners` object attribute. The framework tracks these listeners and automatically removes them during the component disposal phase.
+
+```javascript
+h.button(
+  {
+    listeners: {
+      click: (e) => console.log("Clicked!", e),
+      mouseover: (e) => console.log("Hovered", e),
+    },
+  },
+  "Safe Button",
+);
+```
+
+#### Extended Functionality (`methods`)
+
+You can attach custom methods directly to a DOM node using the `methods` attribute. This is useful for exposing API-like functionality on specific elements.
+
+```javascript
+h.div({
+  id: "my-widget",
+  methods: {
+    refresh: function () {
+      this.innerHTML = "Refreshed!";
+    },
+  },
+});
+
+// Later usage:
+document.getElementById("my-widget").methods().refresh();
+```
+
+#### Inline String Handlers (`h.func`)
+
+For attributes that require a string function call (like `onclick` or `onchange`), use `h.func` to format the call correctly with arguments.
+
+```javascript
+h.button(
+  {
+    onclick: h.func("myGlobalHandler", 123, "test"),
+  },
+  "Click Me",
+);
+// Renders: onclick="myGlobalHandler(123, 'test')"
+```
+
+### Logic Helpers
+
+OSM provides built-in helpers to handle logic directly within your markup structure.
+
+#### `h.call(callback)`
+
+Execute arbitrary logic during the render process. The callback should return a valid Node, string, or array.
+
+```javascript
+h.div(
+  h.call(() => {
+    const date = new Date();
+    return h.span(`Rendered at: ${date.toLocaleTimeString()}`);
+  }),
+);
+```
+
+#### Iteration (`each`)
+
+Iterate over arrays or objects efficiently.
+
+```javascript
+import { each } from "modular-openscriptjs";
+
+const items = ["Apple", "Banana"];
+
+h.ul(each(items, (item, index) => h.li(item)));
+```
+
+#### Conditionals (`ifElse`)
+
+Render content based on boolean conditions.
+
+```javascript
+import { ifElse } from "modular-openscriptjs";
+
+h.div(ifElse(isLoggedIn, h.button("Logout"), h.button("Login")));
+```
+
+### Fragments (`h.$` / `h._`)
+
+Fragments allow you to group multiple elements without adding an extra node to the DOM.
 
 ```javascript
 h.$(h.li("Item 1"), h.li("Item 2"));
 ```
 
-> **Warning**: Fragments cannot be reactive roots for components.
+> [!IMPORTANT]
+> **Single Root Requirement**: Even when using fragments, your overall component structure or logic block must eventually anchor to a single parent element in the DOM tree.
+> **No Wrapper**: Components returning a fragment are **NOT** wrapped in a custom element (e.g., `<ojs-my-comp>`). This means they cannot easily hold local state or use lifecycle hooks that depend on the wrapper. Use fragments primarily for static content or splitting up render logic.
+
+### Special Attributes
+
+OpenScript reserves specific attributes to control rendering behavior and component wrapping.
+
+#### Render Placement
+
+Control where an element is injected relative to a target parent.
+
+| Attribute       | Description                                      |
+| :-------------- | :----------------------------------------------- |
+| `parent`        | The DOM node to append to.                       |
+| `resetParent`   | If `true`, clears the `parent` before appending. |
+| `replaceParent` | If `true`, replaces the `parent` node entirely.  |
+| `firstOfParent` | Prepend to the `parent` instead of appending.    |
+
+```javascript
+// Example: Render a modal directly into the body
+h.div(
+  {
+    parent: document.body,
+    class: "modal-overlay",
+  },
+  h.Card("Modal Content"),
+);
+```
+
+#### Component Wrapper (`c_attr` / `$`)
+
+Pass attributes to a Component's custom element wrapper.
+
+- **`c_attr`**: An object containing attributes for the wrapper.
+- **`$` prefix**: Shorthand for wrapper attributes (e.g., `$class`, `$id`).
+
+```javascript
+// Renders: <ojs-user-profile class="theme-dark" id="profile-1"></ojs-user-profile>
+h.UserProfile({
+  $class: "theme-dark",
+  $id: "profile-1",
+});
+```
 
 ---
 
 ## 5. State Management
 
-OpenScript uses `State` objects. When a state's `.value` changes, bound UI updates automatically.
+OpenScript uses the `State` class to handle reactive data. When a state's value changes, any dependent components or listeners are automatically notified, triggering UI updates.
 
-### creating State
+### Creating State
+
+You create a state object using the `state` helper function. States can hold primitives(strings, numbers, booleans) or objects.
 
 ```javascript
 import { state } from "modular-openscriptjs";
 
+// Primitive State
 const count = state(0);
-const user = state({ name: "Guest" });
+const theme = state("dark");
+
+// Object State
+const user = state({
+  id: 1,
+  name: "Levi",
+  preferences: { notifications: true },
+});
 ```
 
-### Using in Components
+### Using State in Components
 
-1. **Auto-Listen**: Pass state to `render()`.
-   ```javascript
-   render(count) { return h.div(count.value); }
-   ```
-2. **Anonymous Component (`v`)**: Update specific parts of the DOM.
+#### 1. Automatic Listening (Render Argument)
 
-   ```javascript
-   import { v } from "modular-openscriptjs";
+The most common pattern is to pass the state object directly to a component's `render` method. The component automatically subscribes to the state and re-renders whenever its value changes.
 
-   h.div(
-     "Static content ",
-     v(count, (c) => `Dynamic: ${c.value}`),
-   );
-   ```
+```javascript
+export default class CounterDisplay extends Component {
+  render(countState, ...args) {
+    // This component automatically re-renders when countState.value changes
+    return h.div(
+      h.span("Current Count: "),
+      h.strong(countState.value),
+      ...args,
+    );
+  }
+}
+
+// Usage
+h.CounterDisplay(count);
+```
+
+#### 2. Anonymous Components (`v` helper)
+
+For fine-grained updates without creating a full class component, use the `v` (value) helper. It creates a lightweight anonymous component that listens to the state. This is highly efficient for updating text nodes or attributes.
+
+```javascript
+import { v, app } from "modular-openscriptjs";
+const h = app("h");
+
+h.div(
+  h.h1("Welcome"),
+  // Only this specific text node updates when 'user' state changes
+  v(user, (u) => `Hello, ${u.name}!`),
+);
+```
+
+### Reactivity & Objects
+
+> [!CAUTION]
+> **Object Property Pitfall**: Modifying a property of an object stored in state **does NOT** trigger the state to fire. The state system watches the reference of the value, not the deep properties.
+
+```javascript
+// ❌ THIS WILL NOT WORK
+user.value.name = "John"; // The UI will not update!
+
+// ✅ THIS WORKS (Clone & Set)
+// You must create a new object reference to trigger the state system.
+user.value = { ...user.value, name: "John" };
+
+// OR for deep clones/resets
+const newUser = JSON.parse(JSON.stringify(user.value));
+newUser.name = "John";
+user.value = newUser; // Triggers update
+```
+
+**Rule of Thumb**: Treat state values as immutable. Always replace the object entirely when you want to trigger an update.
+
+### State Helper Methods
+
+The `State` object provides several methods for manual control:
+
+- **`.value`**: Getter/Setter for the current value. Setting this triggers listeners.
+- **`.fire()`**: Manually triggers all listeners without changing the value. Useful if you've mutated an object in place (though not recommended) and need to force a refresh.
+- **`.listener(callback)`**: Manually subscribe to changes.
+
+```javascript
+// Manual subscription
+count.listener((s) => {
+  console.log("Count changed to:", s.value);
+});
+```
+
+### Global vs Local State
+
+- **Local State**: Defined inside a component's constructor (`this.count = state(0)`). Used for component-specific logic (toggles, form inputs).
+- **Global State**: Defined in a shared file (e.g., `contexts.js` or `store.js`) and imported by multiple components. Used for app-wide data (user profile, theme, cart).
 
 ---
 
 ## 6. Context API
 
-Share state globally across components and mediators.
+The Context API provides a mechanism to share state and data across decoupled components and mediators without the need for "prop drilling" (passing data through multiple layers of components). It acts as a shared, central repository for specific domains of your application (e.g., Global, User, Theme).
 
-### Setup
+### Setup & Definition
+
+Defining a context is simple. You register it using `putContext` (usually in a dedicated `contexts.js` file) and then export an accessor for it.
 
 ```javascript
-// contexts.js
+// src/contexts.js
 import { putContext, context, app } from "modular-openscriptjs";
 
-// 1. Define
+// 1. Register Context Keys
+// The first argument is the key used to retrieve it later.
+// The second argument is a label (useful for debugging).
 putContext("global", "GlobalContext");
+putContext("user", "UserContext");
 
-// 2. Export
+// 2. Export Helper Accessors
+// This allows other files to simply import 'gc' or 'uc' to access the context.
 export const gc = context("global");
+export const uc = context("user");
 
-// 3. Initialize
+// 3. Initialize States
 export function setupContexts() {
+  // Bulk initialize states for the global context
   gc.states({
     theme: "dark",
-    currentUser: null,
+    appName: "OpenScript App",
+    isLoading: false,
   });
 
+  // Initialize user context
+  uc.states({
+    profile: null,
+    isAuthenticated: false,
+  });
+
+  // Optional: Register in IoC container for dependency injection
   app().value("gc", gc);
+  app().value("uc", uc);
 }
 ```
 
 ### Usage
 
+Once defined, you can import and use the context anywhere in your application—in Components, Mediators, or plain JavaScript services.
+
 ```javascript
-import { gc } from "./contexts.js";
+import { gc, uc } from "./contexts.js";
 
-// Read/Write
-gc.theme.value = "light";
+// Reading State
+console.log("Current Theme:", gc.appState.theme.value);
 
-// In Component
-render() {
-  return h.div(`Theme is: ${gc.theme.value}`);
+// Writing State
+// This will trigger updates in any component listening to 'theme'
+gc.appState.theme.value = "light";
+
+// Using in a Component
+export default class Header extends Component {
+  render() {
+    return h.header(
+      h.h1(gc.appState.appName.value),
+      // Bind directly to state for automatic updates
+      v(uc.appState.isAuthenticated, (auth) =>
+        auth ? h.button("Logout") : h.button("Login"),
+      ),
+    );
+  }
 }
 ```
+
+### Best Practices
+
+#### Global vs. Local State
+
+- **Use Context** for data that needs to be accessed by many completely different parts of your application (e.g., User Session, Theme, Shopping Cart, Notifications).
+- **Use Component State** for transient UI data that only matters to that specific component or its immediate children (e.g., whether a modal is open, current input value of a form field).
+
+#### Performance Warning: Large Lists
+
+> [!WARNING]
+> **Large Datasets**: Do not store massive arrays (e.g., 1000+ items for an infinite scroll) directly in a reactive Context State if they are strictly for display.
+
+Making a huge array reactive can have performance costs. Instead:
+
+1.  **Mediators** should handle fetching the data.
+2.  Store the raw data in a non-reactive service or cache.
+3.  **Components** should retrieve only the slice of data they need to render.
+4.  Use `replaceParent` or manual DOM appending for infinite lists to avoid re-rendering the entire list on every small update.
 
 ---
 
 ## 7. Events & Broker
 
-The **Broker** manages application-wide events.
+In a large application, you don't want every part of your code to know about every other part. That's "tight coupling," and it leads to spaghetti code.
 
-### Defining Events (`events.js`)
+The **Broker** solves this. Think of it like a community bulletin board or a chat room.
 
-Define events as a "fact" structure.
+1.  **Publisher**: One part of the app (e.g., a "Login Button") posts a message ("User just logged in!").
+2.  **Subscriber**: Other parts (e.g., the "Profile Header" or "Analytics Tracker") act on that message.
+3.  **Decoupling**: The Login Button doesn't know who is listening. It just posts the message and moves on.
+
+### 1. Defining Events (`events.js`)
+
+To prevent typos (like typing `"auth:logni"` instead of `"auth:login"`), we define all our event names in a central file. OpenScript uses a special "fact" object structure.
 
 ```javascript
+// src/events.js
+// We use nested objects set to 'true'.
+// OpenScript will convert these into string keys for us.
 export const appEvents = {
   auth: {
-    login: true, // "auth:login"
-    logout: true, // "auth:logout"
+    login: true, // Becomes "auth:login"
+    logout: true, // Becomes "auth:logout"
+    error: true, // Becomes "auth:error"
   },
-  user: {
-    updated: true, // "user:updated"
+  cart: {
+    added: true, // Becomes "cart:added"
+    removed: true, // Becomes "cart:removed"
+    checkout: {
+      success: true, // Becomes "cart:checkout:success"
+    },
   },
 };
 ```
 
-### Registration
+### 2. Registration
 
-In `ojs.config.js`:
+For the system to understand these events, you must register them in your configuration file.
 
 ```javascript
+// ojs.config.js
+import { appEvents } from "./src/events.js";
+
+// Registering validates the structure and enables the system to use them.
 broker.registerEvents(appEvents);
 ```
 
-### Payloads
+### 3. Sending Events with Payloads
 
-Use `payload()` to create standardized event messages.
+When an event happens, you often need to send data with it (e.g., _which_ user logged in?).
+OpenScript uses a standardized **Payload** format to keep things organized. A payload has two parts:
+
+- **Message**: The actual data (User ID, Cart Item, etc.).
+- **Meta**: Extra info (Timestamp, Source, ID).
+
+Use the `payload` helper to create this package.
 
 ```javascript
 import { payload } from "modular-openscriptjs";
 
-broker.send(appEvents.auth.login, payload({ userId: 123 }, { source: "ui" }));
+// Inside your Login Logic...
+const userData = { id: 42, name: "Alice" };
+
+// Send the event
+// 'this.send' is available in Mediators.
+// Anywhere else, you can use broker.send(name, payload)
+broker.send(appEvents.auth.login, payload(userData, { timestamp: Date.now() }));
 ```
+
+### 4. Listening & Parsing Payloads
+
+When you listen for an event (e.g., in a Mediator or Component), you receive the payload as a **JSON string**. You typically need to **parse** it to use the helper methods.
+
+**Why a string?** It ensures that data remains immutable during transit and can be easily serialized for logging or debugging.
+
+```javascript
+import { EventData } from "modular-openscriptjs";
+
+// In a Component or Mediator
+async $$auth_login(eventDataString, eventName) {
+    // 1. Parse the string back into an EventData object
+    const data = EventData.parse(eventDataString);
+
+    // 2. Access the message
+    const userId = data.message.get("id"); // 42
+    const userName = data.message.get("name"); // "Alice"
+
+    console.log(`User ${userName} logged in!`);
+}
+```
+
+#### EventData Helper Methods
+
+Once parsed, the `data` object gives you safe ways to access info:
+
+- `data.message.get("key")`: Get a value.
+- `data.message.has("key")`: Check if a value exists.
+- `data.message.getAll()`: Get the raw object `{ id: 42, name: "Alice" }`.
+- `data.meta.get("timestamp")`: Access metadata.
 
 ---
 
 ## 8. Mediators
 
-Mediators bridge UI and Logic. They are stateless classes that listen to Broker events.
+Mediators are the **"Logic Handlers"** of your application.
+In standard frontend frameworks, you might mix your API calls and business logic right inside your UI components. In OpenScript, we separate them.
+
+**Think of it like a Restaurant:**
+
+- **Component (Waiter)**: Takes the order (Button Click) and sends it to the kitchen. It doesn't cook.
+- **Mediator (Chef)**: Listens for the order, cooks the food (API Call / Logic), and places it on the counter.
+- **Broker (Counter)**: The place where orders and food are exchanged.
+
+### 1. Creating a Mediator
+
+A Mediator is just a class that extends `Mediator`. It doesn't have a UI. It just listens for events and does work.
 
 ```javascript
-// AuthMediator.js
-import { Mediator } from "modular-openscriptjs";
-import { EventData } from "modular-openscriptjs";
+// src/mediators/AuthMediator.js
+import { Mediator, EventData, payload } from "modular-openscriptjs";
 
 export default class AuthMediator extends Mediator {
-  shouldRegister() { return true; }
+  // REQUIRED: This tells the framework to scan this class for listeners
+  shouldRegister() {
+    return true;
+  }
 
-  // Listen to 'auth:login'
-  async $$auth_login(eventData, event) {
-    const data = EventData.parse(eventData); // Parse payload
-    console.log("User logged in:", data.message);
+  // Logic: Listen for 'auth' and 'login' events
+  async $$auth_login(eventDataString, eventName) {
+    const data = EventData.parse(eventDataString);
+    const credentials = data.message.getAll();
 
-    this.send("user:updated", payload({ ... }));
+    try {
+      // "Cook the food" (Perform Logic)
+      const user = await fakeApiService.login(credentials);
+
+      // "Serve the food" (Emit Result)
+      this.send("auth:success", payload({ user }));
+    } catch (err) {
+      this.send("auth:error", payload({ error: err.message }));
+    }
   }
 }
 ```
 
-### Registration (`boot.js` Pattern)
+### 2. Registration (`boot.js` Pattern)
 
-It is best practice to register all mediators in a `boot.js` file.
+Just creating a file doesn't make it work. You need to tell OpenScript to "turn on" these mediators. The best way to do this is a dedicated `boot.js` file.
+
+**Step A: Create `src/boot.js`**
+Use the `ojs()` helper to register your mediators.
+
+```javascript
+// src/boot.js
+import { ojs } from "modular-openscriptjs";
+import AuthMediator from "./mediators/AuthMediator";
+import CartMediator from "./mediators/CartMediator";
+
+export default function bootMediators() {
+  // This instantiates the mediators and connects their listeners
+  ojs(AuthMediator, CartMediator);
+}
+```
+
+**Step B: Import in `main.js`**
+Call the boot function when your app starts.
+
+```javascript
+// src/main.js
+import bootMediators from "./boot";
+
+// ... other setup ...
+
+bootMediators(); // 🚀 Logic layer is now active!
+```
+
+### 3. Event Listening Tricks
+
+The `$$` syntax is powerful. You can listen to single events, multiple events, or entire namespaces.
+
+#### The "OR" Operator (`_`)
+
+If you put an underscore in the method name, it acts like an "OR".
+
+```javascript
+// Listens for 'user' OR 'login' (Not 'user:login')
+$$user_login(data, event) {
+    console.log(`Triggered by ${event}`);
+}
+```
+
+#### Namespaces (Nested Objects)
+
+To organize listeners for related events (like `auth:login`, `auth:logout`), use a nested object.
+
+```javascript
+/*
+ * This property name '$$auth' matches the 'auth' namespace.
+ * Inside, keys match the sub-events.
+ */
+$$auth = {
+  // Listens for 'auth:login'
+  login: async (data) => {
+    /* handle login */
+  },
+
+  // Listens for 'auth:logout'
+  logout: async (data) => {
+    /* handle logout */
+  },
+
+  // Deep nesting works too: 'auth:password:reset'
+  password: {
+    reset: (data) => {
+      /* ... */
+    },
+  },
+};
+```
+
+### 4. Best Practices
+
+- **Keep Components Stupid**: Your components should just show data and emit events. Move ALL complex logic to Mediators.
+- **Stateless logic**: Mediators generally shouldn't hold a "state". They should act on the payload they receive. If you need to store data, update a Global Context or State.
 
 ```javascript
 // boot.js
@@ -679,83 +1162,349 @@ export default function boot() {
 
 ## 9. Routing
 
-The Router uses a fluent API.
+Single Page Applications (SPAs) don't reload the page when you click a link. Instead, they just swap out the content on the screen. The **Router** handles this job.
+
+### 1. Basic Setup
+
+First, let's get the router instance from the container.
 
 ```javascript
+import { app, dom } from "modular-openscriptjs";
+
 const router = app("router");
 const h = app("h");
 
-// Basic Route
-router.on("/", () => {
-    h.HomePage({ parent: document.body, resetParent: true });
-}, "home");
+// Define a standardized way to swap content.
+// We select a root element and say "Everything inside here belongs to the current route".
+const mountPoint = dom.id("app-root");
 
-// Route with Params
-router.on("/user/{id}", () => {
-    const id = router.params.id;
-    // render user profile...
-}, "user.profile");
+function appRender(component) {
+  h.App(component, {
+    parent: mountPoint,
+    resetParent: route.reset, // Clear previous page
+    reconcileParent: true, // Smart DOM Diffing (Smoother)
+  });
+}
+```
 
-// Groups
+### 2. Defining Routes
+
+We use `.on(path, callback, name)` to strict define a route.
+
+- **Path**: The URL pattern.
+- **Callback**: What happens when we visit that URL (usually calling our `appRender` function).
+- **Name**: A nickname for the route (e.g., 'home'), so we don't have to hardcode URLs later.
+
+```javascript
+// A method chain is the cleanest way
+router
+  .on("/", () => appRender(h.HomePage()), "home")
+  .on("/about", () => appRender(h.AboutPage()), "about")
+  .on("/contact", () => appRender(h.ContactPage()), "contact");
+```
+
+#### Multiple Paths (`orOn`)
+
+Sometimes two URLs should go to the same place (e.g., `/login` and `/signin`).
+
+```javascript
+router.orOn(["/login", "/signin"], () => appRender(h.LoginPage()));
+```
+
+### 3. Route Parameters
+
+What if we want to show a profile for _any_ user? We use **curly braces** `{}` to make a segment dynamic.
+
+```javascript
+// Matches /user/1, /user/42, /user/abc
+router.on(
+  "/user/{id}",
+  () => {
+    // 1. Get the parameter
+    const userId = router.params.id;
+
+    // 2. Render component with that ID
+    appRender(h.UserProfile({ id: userId }));
+  },
+  "user.profile",
+);
+```
+
+### 4. Grouping Routes (`prefix`)
+
+If you have an Admin section, you don't want to type `/admin/dashboard`, `/admin/users`, etc., over and over.
+
+```javascript
 router.prefix("/admin").group(() => {
-    router.on("/dashboard", ...);
-    router.on("/settings", ...);
+  // URL: /admin/dashboard
+  router.on("/dashboard", () => appRender(h.Dashboard()), "admin.dash");
+
+  // URL: /admin/settings
+  router.on("/settings", () => appRender(h.Settings()), "admin.settings");
 });
+```
 
-// Navigation
-router.to("user.profile", { id: 42 });
+### 5. Navigation & Logic
 
-// Default/404
-router.default(() => router.to("home"));
+Instead of `<a href="/about">`, we use the router to navigate programmatically.
+
+```javascript
+// Go to a URL
+router.to("/about");
+
+// Go to a Named Route (Better practice!)
+// This generates the URL for you. If you change the URL structure later, this code doesn't break.
+router.to("user.profile", { id: 42 }); // Goes to /user/42
+
+// Check where we are (Useful for highlighting menu items)
+if (router.is("home")) {
+  console.log("We are home!");
+}
+```
+
+### 6. The 404 Page (Default)
+
+If the user types a garbage URL, show them a nice error page.
+
+```javascript
+router.default(() => {
+  appRender(h.NotFoundPage());
+});
 ```
 
 ---
 
 ## 10. IoC Container
 
-Manage dependencies via `app()`.
+As your app grows, managing connections between everything (Routers, APIs, Settings) becomes messy.
+The **IoC (Inversion of Control) Container** solves this by acting as a "central warehouse" for all your services.
 
-### Accessing Services
+Instead of writing `new ApiService()` everywhere, you simply ask the container: _"Hey, give me the API Service"_ and it hands it to you.
+
+### 1. The `app()` Helper
+
+The `app()` function is your key to the warehouse.
 
 ```javascript
+import { app } from "modular-openscriptjs";
+
+// 1. Get a Service
 const router = app("router");
+const broker = app("broker");
+
+// 2. Get the Container itself (to register things)
 const container = app();
 ```
 
-### Registering Services
+### 2. Registering Services
+
+You typically do this in `ojs.config.js` or a `boot.js` file.
+
+#### A. Values (Config/Constants)
+
+Great for API keys or simple objects.
 
 ```javascript
-// Singleton (Single instance)
-app().singleton("api", ApiService);
-
-// Transient (New instance every time)
-app().transient("logger", Logger);
-
-// Value (Constant/Instance)
-app().value("config", { apiUrl: "..." });
+app().value("config", {
+  apiKey: "xyz-123",
+  theme: "dark",
+});
 ```
 
-### Dependency Injection
+#### B. Singletons (One Instance Forever)
+
+The container creates the object **once** (the first time you ask for it) and then reuses it. Perfect for stateful services like a `Router` or `AuthService`.
+
+```javascript
+import AuthService from "./services/AuthService";
+
+// Register
+app().singleton("auth", AuthService);
+
+// Usage
+const auth1 = app("auth"); // Creates new instance
+const auth2 = app("auth"); // Returns SAME instance
+```
+
+#### C. Transients (New Instance Every Time)
+
+The container creates a **fresh** object every time you ask. Good for things like loggers or HTTP requests.
+
+```javascript
+app().transient("logger", Logger);
+```
+
+### 3. Dependency Injection (Magic!)
+
+Here is the superpower. If your `UserService` needs the `AuthService` and `Broker` to work, you don't have to pass them manually. The container does it for you.
 
 ```javascript
 class UserService {
-  constructor(api) {
-    this.api = api;
+  // The container will pass these arguments to the constructor
+  constructor(auth, broker) {
+    this.auth = auth;
+    this.broker = broker;
+  }
+
+  deleteAccount() {
+    this.auth.currentUser.delete();
+    this.broker.send("user:deleted");
   }
 }
 
-// Inject 'api' service into UserService
-app().singleton("userService", UserService, ["api"]);
+// Registering: Define the array of dependency names ["auth", "broker"]
+app().singleton("user", UserService, ["auth", "broker"]);
+
+// Usage: Just ask for 'user', and the rest is automatic!
+const userService = app("user");
 ```
+
+### 4. Core Services
+
+OpenScript comes with these built-in services ready to use:
+
+| Service Name        | Description                    |
+| :------------------ | :----------------------------- |
+| `"h"`               | The Markup Engine (HTML Proxy) |
+| `"router"`          | The Navigation Router          |
+| `"broker"`          | The Event Broker               |
+| `"contextProvider"` | Global Context Manager         |
+| `"repository"`      | Internal Component Repository  |
 
 ---
 
 ## 11. Helper Functions
 
-Global utilities available in `window` or via import.
+OpenScript provides a suite of global utility functions to make your life easier.
 
-- **`ifElse(condition, trueVal, falseVal)`**: Logic helper.
-- **`coalesce(v1, v2)`**: Null coalescing.
-- **`each(list, cb)`**: Safe iteration.
-- **`dom.id(id)` / `dom.get(sel)`**: DOM query shortcuts.
-- **`component(id)`**: Get component instance by ID.
+### Logic Helpers
+
+These are available globally (like `console` or `Math`).
+
+#### 1. `ifElse(condition, trueValue, falseValue)`
+
+A smarter ternary operator. If you pass **functions** as the values, they are only executed if chosen (lazy evaluation).
+
+```javascript
+// Simple
+const status = ifElse(isOnline, "Online", "Offline");
+
+// Lazy (Function is only called if isValid is true)
+const result = ifElse(isValid, () => heavyCalculation(), "Invalid");
+```
+
+#### 2. `coalesce(value1, value2)`
+
+Returns the first value that isn't `null` or `undefined`. Great for defaults.
+
+```javascript
+const displayName = coalesce(user.nickname, user.name, "Guest");
+```
+
+#### 3. `each(list, callback)`
+
+Safely iterate over **Arrays** OR **Objects**.
+
+```javascript
+// Array
+each([1, 2, 3], (val) => console.log(val));
+
+// Object
+each({ a: 1, b: 2 }, (val, key) => console.log(`${key}: ${val}`));
+```
+
+### DOM Utilities (`dom`)
+
+Forget `document.querySelector` and friends. Use `dom`.
+
+- **`dom.id("my-id")`**: Shortcut for `getElementById`.
+- **`dom.get(".class")`**: Shortcut for `querySelector`.
+- **`dom.all("div")`**: Shortcut for `querySelectorAll`.
+- **`dom.put("<b>Hi</b>", el)`**: Sets innerHTML (safely).
+
+### Framework Helpers
+
+- **`app(name)`**: Access services from the IoC container.
+- **`component(uid)`**: Find a live component instance by its ID.
+- **`state(val)`**: Create a new state.
+- **`context(name)`**: Access a global context.
+- **`v(state, cb)`**: Create an anonymous reactive text node.
+
+---
+
+## 12. Tailwind Integration
+
+OpenScript works seamlessly with TailwindCSS. The JIT engine automatically scans your JS files for class names.
+
+### 1. How it Works
+
+Tailwind looks for strings in your code that match class names.
+Because OpenScript uses standard `class: "..."` attributes, it Just Works™.
+
+```javascript
+// Tailwind sees this string and generates the CSS!
+h.div({ class: "bg-blue-500 text-white p-4 rounded" }, "Hello!");
+```
+
+### 2. Dynamic Classes (The "Safelist" Trap)
+
+Tailwind analyzes your code **statically** (it reads text, it doesn't run code).
+This means you **CANNOT** construct class names dynamically if the full string doesn't exist in your code.
+
+```javascript
+// ❌ WRONG: Tailwind won't see "bg-red-500"
+const color = "red";
+h.div({ class: `bg-${color}-500` });
+
+// ✅ CORRECT: Full strings
+const classes = isError ? "bg-red-500" : "bg-blue-500";
+h.div({ class: classes });
+```
+
+**Solution:** If you MUST build dynamic strings, you need to add the patterns to the `safelist` in your `tailwind.config.js`.
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  safelist: [
+    { pattern: /bg-(red|green|blue)-(100|500)/ }, // Forces these to ALWAYS be included
+  ],
+};
+```
+
+### 3. Best Practices
+
+#### Helper Functions
+
+For conditional classes, just like React/Vue, use a helper or template literals.
+
+```javascript
+// Cleaner than ternary soup
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+
+h.button({
+  class: classNames(
+    "px-4 py-2 rounded", // Always applied
+    isActive && "bg-blue-500", // Only if active
+    isDisabled && "opacity-50", // Only if disabled
+  ),
+});
+```
+
+#### Custom Styles (`@apply`)
+
+If a class string gets too long, extract it to CSS using `@apply`.
+
+```css
+/* src/style.css */
+.btn-primary {
+  @apply px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600;
+}
+```
+
+````javascript
+h.button({ class: "btn-primary" }, "Click Me");
+```- **`v(state, cb)`**: Create an anonymous reactive text node.
+````

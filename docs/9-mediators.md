@@ -120,6 +120,7 @@ Mediators can send events using `this.send(event, payload(...))` or `this.broadc
 ```javascript
 import { payload } from "modular-openscriptjs";
 
+// listen to auth and login events
 async $$auth_login(eventData, event) {
   // Validate...
   this.send(

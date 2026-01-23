@@ -60,11 +60,12 @@ import { app } from "modular-openscriptjs";
 
 const h = app("h");
 
-export default function MyFunctionalComponent(props = {}) {
+export default function MyFunctionalComponent(title, content, ...args) {
   return h.div(
     { class: "card" },
-    h.h2(props.title || "Default Title"),
-    h.p(props.content),
+    h.h2(title || "Default Title"),
+    h.p(content),
+    ...args,
   );
 }
 ```
@@ -178,23 +179,7 @@ export default class UserProfile extends Component {
   async $$auth_logout(eventData, event) {
     // 1. Parse Data
     const data = EventData.parse(eventData);
-
-    // 2. Get Safe Component Instance (if needed)
-    // Note: Broker listeners in components might not automatically receive componentId
-    // depending on binding. If 'this' is unsafe, ensure you have a reference.
-    // However, usually 'this' in Component methods is bound.
-    // BUT if the user explicitly warned about 'this' in listeners generally:
-
     console.log(`Received ${event}`);
-    this.cleanUp(); // 'this' is usually safe in class classes unless stated otherwise,
-    // but following the pattern: if it's an auto-attached listener,
-    // verify if it receives componentId?
-    // The user said: "In those mounted function... use component(id)".
-    // Mounted functions usually refer to $_.
-    // Let's assume standard methods $$ might still bind 'this' or
-    // we should stick to the safe pattern if applicable.
-    // For now, I will assume $$ methods on Component might still work with 'this',
-    // but I will respect the standard signature (eventData, event).
   }
 }
 ```
