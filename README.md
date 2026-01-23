@@ -1069,12 +1069,12 @@ When you listen for an event (e.g., in a Mediator or Component), you receive the
 **Why a string?** It ensures that data remains immutable during transit and can be easily serialized for logging or debugging.
 
 ```javascript
-import { EventData } from "modular-openscriptjs";
+import { parsePayload } from "modular-openscriptjs";
 
 // In a Component or Mediator
-async $$auth_login(eventDataString, eventName) {
+async $$auth_login(eventData, eventName) {
     // 1. Parse the string back into an EventData object
-    const data = EventData.parse(eventDataString);
+    const data = parsePayload(eventData);
 
     // 2. Access the message
     const userId = data.message.get("id"); // 42
@@ -1120,7 +1120,7 @@ A Mediator is just a class that extends `Mediator`. It doesn't have a UI. It jus
 
 ```javascript
 // src/mediators/AuthMediator.js
-import { Mediator, EventData, payload } from "modular-openscriptjs";
+import { Mediator, parsePayload, payload } from "modular-openscriptjs";
 
 export default class AuthMediator extends Mediator {
   // REQUIRED: This tells the framework to scan this class for listeners
@@ -1129,8 +1129,8 @@ export default class AuthMediator extends Mediator {
   }
 
   // Logic: Listen for 'auth' and 'login' events
-  async $$auth_login(eventDataString, eventName) {
-    const data = EventData.parse(eventDataString);
+  async $$auth_login(eventData, eventName) {
+    const data = parsePayload(eventData);
     const credentials = data.message.getAll();
 
     try {
