@@ -449,12 +449,12 @@ export default class MarkupEngine {
    * @param {function} f - This function should return an HTMLElement or a string or an Array of either
    * @returns {HTMLElement|string|Array<HTMLElement|string>}
    */
-  call = (
-    f = () => {
+  call = (f = null) => {
+    if (!f) {
       const h = container.resolve("h");
       return h["ojs-group"]();
-    },
-  ) => {
+    }
+
     return f();
   };
 

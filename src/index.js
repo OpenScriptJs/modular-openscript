@@ -262,7 +262,7 @@ const observer = new MutationObserver((mutations) => {
 
       if (/OJS-.*/g.test(node.nodeName)) {
         node.querySelectorAll(".__ojs-c-class__").forEach((n) => {
-          let uid = Number(n.getAttribute("uid"));
+          let uid = Number(n.getAttribute("ojs-uid"));
           let instance = component(uid);
 
           if (!instance) return;
@@ -270,7 +270,7 @@ const observer = new MutationObserver((mutations) => {
           app("repository").removeComponent(uid);
         });
 
-        let uid = Number(node.getAttribute("uid"));
+        let uid = Number(node.getAttribute("ojs-uid"));
 
         if (uid) {
           let instance = component(uid);
