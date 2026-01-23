@@ -1,24 +1,90 @@
 {
-  "name": "modular-openscript",
-  "version": "1.0.0",
-  "description": "Lightweight JavaScript Frontend Framework for Build properly engineered frontend",
-  "keywords": [
-    "OpenScript.js",
-    "OpenScriptJs"
-  ],
-  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
-  "bugs": {
-    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
+  "name": "modular-openscriptjs",
+  "version": "2.0.14",
+  "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
+  "type": "module",
+  "main": "./dist/modular-openscriptjs.umd.js",
+  "module": "./dist/modular-openscriptjs.es.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/modular-openscriptjs.es.js",
+      "require": "./dist/modular-openscriptjs.umd.js"
+    },
+    "./styles": "./dist/styles/tailwind.css",
+    "./plugin": {
+      "types": "./build/vite-plugin-openscript.d.ts",
+      "import": "./build/vite-plugin-openscript.js",
+      "require": "./build/vite-plugin-openscript.js"
+    }
   },
+  "bin": {
+    "create-ojs-app": "bin/create-ojs-app"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "templates",
+    "build/vite-plugin-openscript.js",
+    "build/vite-plugin-openscript.d.ts",
+    "styles",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "openscript",
+    "openscriptjs",
+    "framework",
+    "reactive",
+    "components",
+    "spa",
+    "web-framework",
+    "javascript",
+    "frontend",
+    "ui"
+  ],
+  "author": "Levi Kamara Zwannah",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenScriptJs/modular-openscript.git"
   },
-  "license": "ISC",
-  "author": "Levi Kamara Zwannah <levizwannah@gmail.com>",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bugs": {
+    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
+  },
+  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/generator": "^7.26.2",
+    "@babel/parser": "^7.26.2",
+    "@babel/traverse": "^7.26.2",
+    "@testing-library/dom": "^10.4.0",
+    "@vitest/ui": "^4.0.14",
+    "autoprefixer": "^10.4.20",
+    "happy-dom": "^20.0.10",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "terser": "^5.36.0",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.14"
+  },
+  "dependencies": {
+    "magic-string": "^0.30.21"
   }
 }

@@ -1,0 +1,31 @@
+/* Base Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom OpenScript styles */
+@layer components {
+  /* Component-specific utilities */
+  .os-card {
+    @apply bg-white rounded-lg shadow-md p-4;
+  }
+  
+  .os-btn {
+    @apply px-4 py-2 rounded font-medium transition-colors;
+  }
+  
+  .os-btn-primary {
+    @apply bg-os-primary text-white hover:bg-blue-600;
+  }
+  
+  .os-input {
+    @apply border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-os-primary;
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes */
+  .text-balance {
+    text-wrap: balance;
+  }
+}
