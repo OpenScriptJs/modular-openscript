@@ -566,13 +566,13 @@ Listen to global application events dispatched via the Broker. Methods prefixed 
 - `eventName`: The specific event name triggered.
 
 ```javascript
-import { EventData } from "modular-openscriptjs";
+import { parsePayload } from "modular-openscriptjs";
 
 export default class UserProfile extends Component {
   // Listen for 'auth:login' event
   async $$auth_login(eventData, eventName) {
     // 1. Parse the payload
-    const data = EventData.parse(eventData);
+    const data = parsePayload(eventData);
 
     console.log("User Logged In:", data.message.get("userId"));
   }
