@@ -8,7 +8,6 @@ import {
   destroyNodeDeep,
   getOjsChildren,
 } from "../utils/helpers.js";
-import DOM from "../utils/DOM.js";
 
 /**
  * Base Component Class
@@ -260,7 +259,7 @@ export default class Component {
     if (!parent) parent = h.dom;
 
     return parent.querySelectorAll(
-      `ojs-${this.kebab(this.name)}[uid="${this.id}"]`,
+      `ojs-${this.kebab(this.name)}[ojs-uid="${this.id}"]`,
     );
   }
 
@@ -411,7 +410,7 @@ export default class Component {
 
       let current =
         h.dom.querySelectorAll(
-          `ojs-${this.kebab(this.name)}[uid="${
+          `ojs-${this.kebab(this.name)}[ojs-uid="${
             this.id
           }"][s-${stateId}="${stateId}"]`,
         ) ?? [];
@@ -462,7 +461,7 @@ export default class Component {
     }
 
     let attr = {
-      uid: uuid,
+      ojs_uid: uuid,
       resetParent,
       replaceParent,
       firstOfParent,
@@ -593,7 +592,7 @@ export default class Component {
     children.forEach((child) => {
       let component = container
         .resolve("repository")
-        .findComponent(child.getAttribute("uid"));
+        .findComponent(child.getAttribute("ojs-uid"));
       if (component) component.emit(this.EVENTS.mounted, component.id);
     });
   }
