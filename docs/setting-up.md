@@ -180,7 +180,9 @@ export function configureApp() {
    */
   registerNodeDisposalCallback((node) => {
     // Example: Dispose Bootstrap tooltips/popovers
-    // if (node._bootstrap_tooltip) node._bootstrap_tooltip.dispose();
+    // if bootstrap.Tooltip.getInstance(node) {
+    //   bootstrap.Tooltip.getInstance(node).dispose();
+    // }
   });
 }
 
