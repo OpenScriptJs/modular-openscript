@@ -453,7 +453,7 @@ export default class Component {
 
     let uuid = this.id;
 
-    if (this.states?.length) {
+    if (this.states && Object.keys(this.states)?.length) {
       container.resolve("repository").addComponentArgs(this.id, args ?? []);
     }
 
