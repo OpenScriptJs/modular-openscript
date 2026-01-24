@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/OpenScriptJs/modular-openscript" target="_blank">
     <!-- You can add a logo here if available -->
-    <img src="https://via.placeholder.com/200x50?text=OpenScriptJs" alt="OpenScriptJs Logo" width="200">
+    <img src="assets/images/OpenScript.Js.png" alt="OpenScriptJs Logo" width="200">
   </a>
 </p>
 
@@ -885,7 +885,7 @@ count.listener((s) => {
 
 ### Global vs Local State
 
-- **Local State**: Defined inside a component's constructor (`this.count = state(0)`). Used for component-specific logic (toggles, form inputs).
+- **Local State**: Defined inside a component's constructor (`this.count = state(0); this.count.listener(this)`). Used for component-specific logic (toggles, form inputs).
 - **Global State**: Defined in a shared file (e.g., `contexts.js` or `store.js`) and imported by multiple components. Used for app-wide data (user profile, theme, cart).
 
 ---

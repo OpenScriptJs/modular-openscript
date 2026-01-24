@@ -320,7 +320,6 @@ export default class Component {
     let final = {
       index: -1,
       parent: null,
-      states: [],
       resetParent: false,
       replaceParent: false,
       firstOfParent: false,
@@ -335,7 +334,6 @@ export default class Component {
       ) {
         args[i].listener(`component-${this.id}`);
         this.states[args[i].$__id__] = args[i];
-        final.states.push(args[i].$__id__);
       } else if (
         !(
           args[i] instanceof DocumentFragment || args[i] instanceof HTMLElement
@@ -394,7 +392,6 @@ export default class Component {
       index,
       parent,
       resetParent,
-      states,
       replaceParent,
       firstOfParent,
       reconcileParent,
@@ -456,7 +453,7 @@ export default class Component {
 
     let uuid = this.id;
 
-    if (states?.length) {
+    if (this.states?.length) {
       container.resolve("repository").addComponentArgs(this.id, args ?? []);
     }
 
@@ -478,7 +475,7 @@ export default class Component {
       }
     }
 
-    states.forEach((id) => {
+    Object.keys(this.states).forEach((id) => {
       attr[`s-${id}`] = id;
     });
 
