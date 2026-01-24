@@ -65,6 +65,10 @@ export default class State {
       }
 
       this.$__listeners__.set(`component-${listener.id}`, listener);
+
+      // Add the state to the component's states
+      listener.states[this.$__id__] = this;
+
       return `component-${listener.id}`;
     } else {
       let id = this.$__CALLBACK_ID__++;
