@@ -1,27 +1,54 @@
 /**
- * Root Application Component with Tailwind
+ * Root Application Component
  */
 
-import { Component, app, ojs } from "modular-openscriptjs";
+import { Component, app, component, parsePayload } from "modular-openscriptjs";
+import { appEvents } from "../ojs.events";
 
 const h = app("h");
 
 export default class App extends Component {
   render(...args) {
     return h.div(
-      { class: "min-h-screen bg-gradient-to-br from-purple-500 to-pink-500" },
+      { class: "app-container" },
       h.header(
-        { class: "text-white text-center py-12" },
-        h.h1({ class: "text-5xl font-bold mb-2" }, "Welcome to OpenScript!"),
-        h.p(
-          { class: "text-xl opacity-90" },
-          "A lightweight, reactive JavaScript framework"
-        )
+        { class: "app-header" },
+        h.h1("Welcome to OpenScript!"),
+        h.p("A lightweight, reactive JavaScript framework"),
       ),
-      h.main({ class: "flex justify-center items-center py-12" }, h.Counter()),
-      ...args
+      h.main({ class: "app-main" }, ...args),
     );
   }
-}
 
-ojs(App);
+  // component emitted events - internal events
+  $_mounted(id) {
+    let self = component(id);
+    console.log(`${self.id} has successfully mounted`);
+  }
+
+  // broker level events
+  $$app = {
+    booted: (eventData, eventName) => {
+      let payload = parsePayload(eventData);
+
+      const meta = payload.meta;
+      const message = payload.message;
+
+      console.log(`App has successfully booted`, eventName);
+    },
+
+    ready: (eventData, eventName) => {
+      console.log(`App is ready`, appEvents.app.ready, " was fired");
+    },
+
+    needs: {
+      reboot: (eventData, eventName) => {
+        console.log(
+          `App needs reboot`,
+          appEvents.app.needs.reboot,
+          " was fired",
+        );
+      },
+    },
+  };
+}

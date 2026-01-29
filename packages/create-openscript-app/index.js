@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * create-ojs-app
+ * create-openscript-app
  * CLI tool to scaffold new OpenScript projects
  * Similar to create-react-app, create-vue
  */
@@ -59,11 +59,15 @@ async function createProject(projectName, template = "basic") {
   logSuccess(`Created directory: ${projectName}`);
 
   // Get template path
-  const templatesDir = path.join(__dirname, "..", "templates");
+  const templatesDir = path.join(__dirname, "templates");
   const templatePath = path.join(templatesDir, template);
 
   if (!fs.existsSync(templatePath)) {
     logError(`Template "${template}" not found!`);
+    log("\nAvailable templates:", "cyan");
+    log("  basic      - Basic OpenScript project (default)", "cyan");
+    log("  tailwind   - Project with TailwindCSS integration", "cyan");
+    log("  bootstrap  - Project with Bootstrap 5 integration\n", "cyan");
     fs.rmdirSync(projectPath);
     process.exit(1);
   }
@@ -101,7 +105,7 @@ async function createProject(projectName, template = "basic") {
 
   fs.writeFileSync(
     path.join(projectPath, "package.json"),
-    JSON.stringify(packageJson, null, 2)
+    JSON.stringify(packageJson, null, 2),
   );
   logSuccess("Created package.json");
 
@@ -163,7 +167,7 @@ function updateProjectName(projectPath, projectName) {
     let content = fs.readFileSync(indexHtmlPath, "utf8");
     content = content.replace(
       /<title>.*<\/title>/,
-      `<title>${projectName}</title>`
+      `<title>${projectName}</title>`,
     );
     fs.writeFileSync(indexHtmlPath, content);
   }
@@ -177,17 +181,38 @@ function updateProjectName(projectPath, projectName) {
   }
 }
 
+function showHelp() {
+  log(
+    "\n📦 create-openscript-app - OpenScript Project Scaffolding Tool\n",
+    "bright",
+  );
+  log("Usage:", "cyan");
+  log("  npx create-openscript-app <project-name> [template]\n", "cyan");
+  log("Arguments:", "cyan");
+  log("  project-name  Name of your new project (required)", "cyan");
+  log("  template      Template to use (optional, default: basic)\n", "cyan");
+  log("Available templates:", "cyan");
+  log("  basic      - Basic OpenScript project with Vite", "cyan");
+  log("  tailwind   - Project with TailwindCSS integration", "cyan");
+  log("  bootstrap  - Project with Bootstrap 5 integration\n", "cyan");
+  log("Examples:", "cyan");
+  log("  npx create-openscript-app my-app", "cyan");
+  log("  npx create-openscript-app my-app tailwind", "cyan");
+  log("  npx create-openscript-app my-app bootstrap\n", "cyan");
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 
+// Handle help flag
+if (args.includes("--help") || args.includes("-h")) {
+  showHelp();
+  process.exit(0);
+}
+
 if (args.length === 0) {
   log("\n❌ Please specify a project name\n", "red");
-  log("Usage: npm create ojs-app <project-name> [template]\n", "cyan");
-  log("   or: npx create-ojs-app <project-name> [template]\n", "cyan");
-  log("Available templates:", "cyan");
-  log("  basic      - Basic OpenScript project (default)", "cyan");
-  log("  tailwind   - Project with TailwindCSS integration", "cyan");
-  log("  bootstrap  - Project with Bootstrap 5 integration\n", "cyan");
+  showHelp();
   process.exit(1);
 }
 
@@ -197,7 +222,7 @@ const template = args[1] || "basic";
 // Validate project name
 if (!/^[a-z0-9-_]+$/.test(projectName)) {
   logError(
-    "Project name can only contain lowercase letters, numbers, hyphens, and underscores"
+    "Project name can only contain lowercase letters, numbers, hyphens, and underscores",
   );
   process.exit(1);
 }

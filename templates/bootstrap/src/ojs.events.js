@@ -7,5 +7,10 @@ export const appEvents = {
   app: {
     started: true,
     ready: true,
+    booted: true,
+
+    needs: {
+      reboot: true,
+    },
   },
 };

@@ -1,6 +1,6 @@
 {
   "name": "modular-openscriptjs",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "OpenScriptJs Framework - A lightweight, reactive JavaScript framework for building modern web applications",
   "type": "module",
   "main": "./dist/modular-openscriptjs.umd.js",
@@ -19,13 +19,8 @@
       "require": "./build/vite-plugin-openscript.js"
     }
   },
-  "bin": {
-    "create-ojs-app": "bin/create-ojs-app"
-  },
   "files": [
     "dist",
-    "bin",
-    "templates",
     "build/vite-plugin-openscript.js",
     "build/vite-plugin-openscript.d.ts",
     "styles",

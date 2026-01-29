@@ -14,9 +14,10 @@ putContext(["global"], "AppContext");
 export const gc = context("global");
 
 export function setupContexts() {
+  gc.appName = "OpenScript Js";
+  gc.version = "1.0.0";
+
   gc.states({
-    appName: "Setup App",
-    version: "1.0.0",
     isInitialized: false,
   });
 

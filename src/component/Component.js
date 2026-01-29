@@ -41,7 +41,8 @@ export default class Component {
       rendered: "rendered", // component ui is computed
       rerendered: "rerendered", // component was ui was recomputed.
       mounted: "mounted", // the component is now on the dom
-      unmounted: "unmounted", // removed from the repository
+      unmounted: "unmounted", // removed from the repository,
+      childrenMounted: "childrenMounted", // used when rerendering completes
     };
 
     /**
@@ -99,6 +100,12 @@ export default class Component {
       let repo = container.resolve("repository");
       let component = repo.findComponent(componentId);
       if (component) component.handleMounted();
+    });
+
+    this.on(this.EVENTS.childrenMounted, (componentId) => {
+      let repo = container.resolve("repository");
+      let component = repo.findComponent(componentId);
+      if (component) component.handleChildrenMounted();
     });
 
     /**
@@ -435,9 +442,10 @@ export default class Component {
           } else {
             reconciler.reconcile(markup, e.childNodes[0]);
           }
-        }
 
-        this.emit(this.EVENTS.rerendered, this.id);
+          this.emit(this.EVENTS.childrenMounted, this.id);
+          this.emit(this.EVENTS.rerendered, this.id);
+        }
       });
 
       queueMicrotask(cleanupDisconnectedComponents);
@@ -591,6 +599,28 @@ export default class Component {
         .resolve("repository")
         .findComponent(child.getAttribute("ojs-uid"));
       if (component) component.emit(this.EVENTS.mounted, component.id);
+    });
+  }
+
+  handleChildrenMounted() {
+    if (!this.mounted) return;
+
+    let markups = this.markup();
+
+    let root = markups[0];
+
+    if (!root || !root.isConnected) return;
+
+    let children = getOjsChildren(root);
+
+    children.forEach((child) => {
+      let component = container
+        .resolve("repository")
+        .findComponent(child.getAttribute("ojs-uid"));
+
+      if (component && !component.mounted) {
+        component.emit(this.EVENTS.mounted, component.id);
+      }
     });
   }
 }
