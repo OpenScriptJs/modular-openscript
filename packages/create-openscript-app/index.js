@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * create-ojs-app
+ * create-openscript-app
  * CLI tool to scaffold new OpenScript projects
  * Similar to create-react-app, create-vue
  */
@@ -182,9 +182,12 @@ function updateProjectName(projectPath, projectName) {
 }
 
 function showHelp() {
-  log("\n📦 create-ojs-app - OpenScript Project Scaffolding Tool\n", "bright");
+  log(
+    "\n📦 create-openscript-app - OpenScript Project Scaffolding Tool\n",
+    "bright",
+  );
   log("Usage:", "cyan");
-  log("  npx create-ojs-app <project-name> [template]\n", "cyan");
+  log("  npx create-openscript-app <project-name> [template]\n", "cyan");
   log("Arguments:", "cyan");
   log("  project-name  Name of your new project (required)", "cyan");
   log("  template      Template to use (optional, default: basic)\n", "cyan");
@@ -193,9 +196,9 @@ function showHelp() {
   log("  tailwind   - Project with TailwindCSS integration", "cyan");
   log("  bootstrap  - Project with Bootstrap 5 integration\n", "cyan");
   log("Examples:", "cyan");
-  log("  npx create-ojs-app my-app", "cyan");
-  log("  npx create-ojs-app my-app tailwind", "cyan");
-  log("  npx create-ojs-app my-app bootstrap\n", "cyan");
+  log("  npx create-openscript-app my-app", "cyan");
+  log("  npx create-openscript-app my-app tailwind", "cyan");
+  log("  npx create-openscript-app my-app bootstrap\n", "cyan");
 }
 
 // Parse command line arguments

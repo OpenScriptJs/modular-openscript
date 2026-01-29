@@ -1,11 +1,11 @@
-# create-ojs-app
+# create-openscript-app
 
 CLI tool to scaffold new OpenScript projects.
 
 ## Usage
 
 ```bash
-npx create-ojs-app <project-name> [template]
+npx create-openscript-app <project-name> [template]
 ```
 
 ## Available Templates
@@ -20,13 +20,13 @@ npx create-ojs-app <project-name> [template]
 
 ```bash
 # Create a basic project
-npx create-ojs-app my-app
+npx create-openscript-app my-app
 
 # Create a project with TailwindCSS
-npx create-ojs-app my-app tailwind
+npx create-openscript-app my-app tailwind
 
 # Create a project with Bootstrap
-npx create-ojs-app my-app bootstrap
+npx create-openscript-app my-app bootstrap
 ```
 
 ## What's Included

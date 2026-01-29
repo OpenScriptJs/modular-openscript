@@ -70,7 +70,17 @@ We didn't just build another framework; we built a toolset for developers who va
 
 ### Installation
 
-Install the package via npm:
+Start a project
+```bash
+npm create openscript-app <project-name> <template>
+```
+
+Available templates:
+- `basic`
+- `tailwind`
+- `bootstrap`
+
+Or Install the package via npm:
 
 ```bash
 npm install modular-openscriptjs
