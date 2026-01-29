@@ -1,0 +1,37 @@
+{
+  "name": "create-ojs-app",
+  "version": "1.0.0",
+  "description": "CLI to scaffold OpenScript projects - Create modern web apps with OpenScriptJs",
+  "type": "module",
+  "bin": {
+    "create-ojs-app": "index.js"
+  },
+  "files": [
+    "index.js",
+    "templates"
+  ],
+  "keywords": [
+    "openscript",
+    "openscriptjs",
+    "scaffold",
+    "cli",
+    "create-app",
+    "vite",
+    "frontend",
+    "framework"
+  ],
+  "author": "Levi Kamara Zwannah",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenScriptJs/modular-openscript.git",
+    "directory": "packages/create-ojs-app"
+  },
+  "bugs": {
+    "url": "https://github.com/OpenScriptJs/modular-openscript/issues"
+  },
+  "homepage": "https://github.com/OpenScriptJs/modular-openscript#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

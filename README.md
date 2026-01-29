@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-    <strong>The Progressive, PHP-Inspired JavaScript Framework for Artisans.</strong>
+    <strong>The Progressive, Lightweight JavaScript Framework for Artisans.</strong>
 </p>
 
 <p align="center">
@@ -443,7 +443,6 @@ OpenScript is built around an **Inversion of Control (IoC) Container**. Instead 
 | **Markup Engine** | `app('h')`               | Helper proxy for creating DOM elements.        |
 | **Router**        | `app('router')`          | Manages navigation and URL handling.           |
 | **Broker**        | `app('broker')`          | Central event bus for decoupled communication. |
-| **Context**       | `app('contextProvider')` | Manages global application state contexts.     |
 
 ---
 
@@ -485,8 +484,9 @@ export default class Counter extends Component {
   }
 }
 
-// CRITICAL: Register before usage!
-ojs(Counter);
+// ./components/App.js
+// CRITICAL: Register counter before usage!
+// ojs(Counter);
 ```
 
 > [!IMPORTANT]
@@ -569,7 +569,7 @@ Listen to global application events dispatched via the Broker. Methods prefixed 
 import { parsePayload } from "modular-openscriptjs";
 
 export default class UserProfile extends Component {
-  // Listen for 'auth:login' event
+  // Listen for 'auth' and 'login' event
   async $$auth_login(eventData, eventName) {
     // 1. Parse the payload
     const data = parsePayload(eventData);

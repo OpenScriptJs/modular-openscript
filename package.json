@@ -19,13 +19,8 @@
       "require": "./build/vite-plugin-openscript.js"
     }
   },
-  "bin": {
-    "create-ojs-app": "bin/create-ojs-app"
-  },
   "files": [
     "dist",
-    "bin",
-    "templates",
     "build/vite-plugin-openscript.js",
     "build/vite-plugin-openscript.d.ts",
     "styles",
