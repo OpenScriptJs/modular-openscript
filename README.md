@@ -15,6 +15,7 @@
     <a href="https://www.npmjs.com/package/modular-openscriptjs"><img src="https://img.shields.io/npm/v/modular-openscriptjs.svg?style=flat-square" alt="NPM Version"></a>
     <a href="https://github.com/OpenScriptJs/modular-openscript/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/modular-openscriptjs.svg?style=flat-square" alt="License"></a>
     <a href="https://github.com/OpenScriptJs/modular-openscript/issues"><img src="https://img.shields.io/github/issues/OpenScriptJs/modular-openscript?style=flat-square" alt="Issues"></a>
+    <a href="https://www.npmjs.com/package/modular-openscriptjs"><img src="https://img.shields.io/npm/dt/modular-openscriptjs.svg?style=flat-square" alt="Downloads"></a>
 </p>
 
 ## Introduction
@@ -70,12 +71,14 @@ We didn't just build another framework; we built a toolset for developers who va
 
 ### Installation
 
-Start a project
+Start a project (All basic configurations are done)
+
 ```bash
 npm create openscript-app <project-name> <template>
 ```
 
 Available templates:
+
 - `basic`
 - `tailwind`
 - `bootstrap`
@@ -261,11 +264,11 @@ configureApp();
 
 ### Define Application Events
 
-OpenScript uses a centralized event broker. It's best practice to define all your application events in a single file, typically `events.js` (or `src/events.js`).
+OpenScript uses a centralized event broker. It's best practice to define all your application events in a single file, typically `ojs.events.js` (or `src/ojs.events.js`).
 
 If you configured `broker.requireEventsRegistration(true)` in your `ojs.config.js`, only events defined here and registered will be allowed.
 
-Create a `src/events.js` file:
+Create a `src/ojs.events.js` file:
 
 ```javascript
 /**
@@ -448,11 +451,11 @@ You are now set up with the basic structure of an OpenScript application!
 
 OpenScript is built around an **Inversion of Control (IoC) Container**. Instead of importing global instances directly, you access core services via the `app()` helper.
 
-| Service           | Access                   | Description                                    |
-| :---------------- | :----------------------- | :--------------------------------------------- |
-| **Markup Engine** | `app('h')`               | Helper proxy for creating DOM elements.        |
-| **Router**        | `app('router')`          | Manages navigation and URL handling.           |
-| **Broker**        | `app('broker')`          | Central event bus for decoupled communication. |
+| Service           | Access          | Description                                    |
+| :---------------- | :-------------- | :--------------------------------------------- |
+| **Markup Engine** | `app('h')`      | Helper proxy for creating DOM elements.        |
+| **Router**        | `app('router')` | Manages navigation and URL handling.           |
+| **Broker**        | `app('broker')` | Central event bus for decoupled communication. |
 
 ---
 
@@ -473,6 +476,7 @@ export default class Counter extends Component {
   constructor() {
     super();
     this.count = state(0);
+    this.count.listener(this); // make this component listen to count state changes
   }
 
   // Lifecycle Methods (prefixed with $_)
@@ -579,22 +583,24 @@ Listen to global application events dispatched via the Broker. Methods prefixed 
 import { parsePayload } from "modular-openscriptjs";
 
 export default class UserProfile extends Component {
-  // Listen for 'auth' and 'login' event
-  async $$auth_login(eventData, eventName) {
+  // Listen for 'auth:login' and 'auth:logout' events
+  $$auth = {
+    login_logout: (eventData, eventName) {
     // 1. Parse the payload
-    const data = parsePayload(eventData);
+      const data = parsePayload(eventData);
 
-    console.log("User Logged In:", data.message.get("userId"));
+      console.log("User Logged In:", data.message.get("userId"));
+    }
   }
 }
 ```
 
 #### 4. Inline Attribute Listeners
 
-For attributes that expect a string script (like `onclick`), use `this.method()`.
+For attributes that expect a string script (like `onclick`), use `this.method(methodName, ...arguments)`. This method formats the component methods such that it can be called from the html markup. Example: `onclick="handleClick(arg1, arg2)"`
 
 ```javascript
-h.button({ onclick: this.method("handleClick") }, "Click");
+h.button({ onclick: this.method("handleClick", "arg1", "arg2") }, "Click");
 ```
 
 ---
@@ -715,7 +721,7 @@ h.div(
 
 #### Iteration (`each`)
 
-Iterate over arrays or objects efficiently.
+Iterate over arrays or objects efficiently. Try to keep your callbacks stateless to avoid memory leaks.
 
 ```javascript
 import { each } from "modular-openscriptjs";
@@ -743,8 +749,8 @@ Fragments allow you to group multiple elements without adding an extra node to t
 h.$(h.li("Item 1"), h.li("Item 2"));
 ```
 
-> [!IMPORTANT]
-> **Single Root Requirement**: Even when using fragments, your overall component structure or logic block must eventually anchor to a single parent element in the DOM tree.
+> [!IMPORTANT]  
+> **Single Root Requirement**: Even when using fragments, your overall component structure or logic block must eventually anchor to a single parent element in the DOM tree.  
 > **No Wrapper**: Components returning a fragment are **NOT** wrapped in a custom element (e.g., `<ojs-my-comp>`). This means they cannot easily hold local state or use lifecycle hooks that depend on the wrapper. Use fragments primarily for static content or splitting up render logic.
 
 ### Special Attributes
@@ -857,9 +863,24 @@ h.div(
 );
 ```
 
+To style the anonymous component wrapper, you can add a third argument to the `v` helper. The third parameter should be an object like `{ c_attr: {class: 'mb-3 d-block'} }`
+
+```javascript
+import { v, app } from "modular-openscriptjs";
+const h = app("h");
+
+h.div(
+  h.h1("Welcome"),
+  // Only this specific span node updates when 'user' state changes
+  v(user, (u) => h.span(`Hello, ${u.value.name}!`), {
+    c_attr: { class: "mb-3 d-block" },
+  }),
+);
+```
+
 ### Reactivity & Objects
 
-> [!CAUTION]
+> [!CAUTION]  
 > **Object Property Pitfall**: Modifying a property of an object stored in state **does NOT** trigger the state to fire. The state system watches the reference of the value, not the deep properties.
 
 ```javascript
