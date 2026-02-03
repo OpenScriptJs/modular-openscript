@@ -15,6 +15,7 @@
     <a href="https://www.npmjs.com/package/modular-openscriptjs"><img src="https://img.shields.io/npm/v/modular-openscriptjs.svg?style=flat-square" alt="NPM Version"></a>
     <a href="https://github.com/OpenScriptJs/modular-openscript/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/modular-openscriptjs.svg?style=flat-square" alt="License"></a>
     <a href="https://github.com/OpenScriptJs/modular-openscript/issues"><img src="https://img.shields.io/github/issues/OpenScriptJs/modular-openscript?style=flat-square" alt="Issues"></a>
+    <a href="https://www.npmjs.com/package/modular-openscriptjs"><img src="https://img.shields.io/npm/dt/modular-openscriptjs.svg?style=flat-square" alt="Downloads"></a>
 </p>
 
 ## Introduction
@@ -71,11 +72,13 @@ We didn't just build another framework; we built a toolset for developers who va
 ### Installation
 
 Start a project (All basic configurations are done)
+
 ```bash
 npm create openscript-app <project-name> <template>
 ```
 
 Available templates:
+
 - `basic`
 - `tailwind`
 - `bootstrap`
@@ -448,11 +451,11 @@ You are now set up with the basic structure of an OpenScript application!
 
 OpenScript is built around an **Inversion of Control (IoC) Container**. Instead of importing global instances directly, you access core services via the `app()` helper.
 
-| Service           | Access                   | Description                                    |
-| :---------------- | :----------------------- | :--------------------------------------------- |
-| **Markup Engine** | `app('h')`               | Helper proxy for creating DOM elements.        |
-| **Router**        | `app('router')`          | Manages navigation and URL handling.           |
-| **Broker**        | `app('broker')`          | Central event bus for decoupled communication. |
+| Service           | Access          | Description                                    |
+| :---------------- | :-------------- | :--------------------------------------------- |
+| **Markup Engine** | `app('h')`      | Helper proxy for creating DOM elements.        |
+| **Router**        | `app('router')` | Manages navigation and URL handling.           |
+| **Broker**        | `app('broker')` | Central event bus for decoupled communication. |
 
 ---
 
@@ -859,7 +862,9 @@ h.div(
   v(user, (u) => `Hello, ${u.name}!`),
 );
 ```
+
 To style the anonymous component wrapper, you can add a third argument to the `v` helper. The third parameter should be an object like `{ c_attr: {class: 'mb-3 d-block'} }`
+
 ```javascript
 import { v, app } from "modular-openscriptjs";
 const h = app("h");
@@ -867,11 +872,9 @@ const h = app("h");
 h.div(
   h.h1("Welcome"),
   // Only this specific span node updates when 'user' state changes
-  v(
-    user, 
-    (u) => h.span(`Hello, ${u.value.name}!`), 
-    { c_attr: {class: 'mb-3 d-block'} }
-  ),
+  v(user, (u) => h.span(`Hello, ${u.value.name}!`), {
+    c_attr: { class: "mb-3 d-block" },
+  }),
 );
 ```
 
